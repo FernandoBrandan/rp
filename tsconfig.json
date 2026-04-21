@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "declaration": true,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "target": "ES2021",
+    "sourceMap": true,
+    "outDir": "./dist", 
+    "incremental": true,
+    "skipLibCheck": true,
+    "strictNullChecks": false,
+    "noImplicitAny": false,
+    "strictBindCallApply": false,
+    "forceConsistentCasingInFileNames": false,
+    "noFallthroughCasesInSwitch": false,
+    "paths": {
+      "@common/*": ["./src/common/*"],
+      "@infra/*": ["./src/infra/*"],
+      "@infra/tokens": ["./src/infra/tokens/index.ts"],
+      "@catalog/*": ["./src/modules/01 catalog/*"],
+      "@order/*": ["./src/modules/03 order/*"],
+      "@cart/*": ["./src/modules/02 cart/*"],
+      "@payment/*": ["./src/modules/04 payments/*"]
+    }
+  }
+}
