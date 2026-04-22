@@ -1,8 +1,8 @@
+// src/infra/redis/redisService.service.ts
 import { REDIS_CLIENT } from '@infra/tokens';
 import { Inject, Injectable } from '@nestjs/common';
 import Redis from 'ioredis';
 
-// Servicio opcional para encapsular operaciones comunes
 @Injectable()
 export class RedisService {
   constructor(@Inject(REDIS_CLIENT) private readonly redis: Redis) {}

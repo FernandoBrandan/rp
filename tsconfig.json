@@ -8,7 +8,7 @@
     "allowSyntheticDefaultImports": true,
     "target": "ES2021",
     "sourceMap": true,
-    "outDir": "./dist", 
+    "outDir": "./dist",
     "incremental": true,
     "skipLibCheck": true,
     "strictNullChecks": false,
@@ -19,11 +19,11 @@
     "paths": {
       "@common/*": ["./src/common/*"],
       "@infra/*": ["./src/infra/*"],
-      "@infra/tokens": ["./src/infra/tokens/index.ts"],
-      "@catalog/*": ["./src/modules/01 catalog/*"],
-      "@order/*": ["./src/modules/03 order/*"],
-      "@cart/*": ["./src/modules/02 cart/*"],
-      "@payment/*": ["./src/modules/04 payments/*"]
+      "@catalog/*": ["./src/modules/01catalog/*"],
+      "@cart/*": ["./src/modules/02cart/*"],
+      "@order/*": ["./src/modules/03order/*"],
+      "@payment/*": ["./src/modules/04payments/*"],
+      "@identity/*": ["./src/modules/identity/*"]
     }
   }
 }

@@ -1,3 +1,4 @@
+// src/infra/health/health.service.ts
 import { Injectable, ServiceUnavailableException } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 

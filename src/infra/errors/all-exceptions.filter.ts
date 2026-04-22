@@ -1,3 +1,4 @@
+// src/infra/errors/all-exceptions.filter.ts
 import {
   ExceptionFilter,
   Catch,

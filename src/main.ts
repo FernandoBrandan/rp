@@ -1,3 +1,4 @@
+// src/main.ts
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 
@@ -5,7 +6,7 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppLogger } from '@infra/logger/logger';
 import { correlationIdMiddleware } from '@infra/logger/correlation-id.middleware';
 import { AllExceptionsFilter } from '@infra/errors/all-exceptions.filter';
-import { InfrastructureExceptionFilter } from '@common/infrastructure-exception.filter';
+import { InfrastructureExceptionFilter } from '@common/filters/infrastructure-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);

@@ -27,14 +27,14 @@ El primer paso es instalar el paquete necesario y configurar el módulo de Swagg
         .build();
 
       const document = SwaggerModule.createDocument(app, config);
-      SwaggerModule.setup('api/docs', app, document); // La UI estará disponible en /api/docs
+      SwaggerModule.setup('api/docs', app, document); __ La UI estará disponible en /api/docs
 
       await app.listen(3000);
     }
     bootstrap();
     ```
 
-    Con esto, al ejecutar tu aplicación, podrás acceder a la interfaz gráfica de Swagger en `http://localhost:3000/api/docs`.
+    Con esto, al ejecutar tu aplicación, podrás acceder a la interfaz gráfica de Swagger en `http:__localhost:3000/api/docs`.
 
 ### 🧩 Documentando tus Endpoints
 
@@ -54,7 +54,7 @@ export class ProductsController {
   @Get()
   @ApiOperation({ summary: 'Obtener todos los productos' })
   findAll() {
-    // ...
+    __ ...
   }
 }
 ```
@@ -106,7 +106,7 @@ Para integrar la autenticación que ya tienes planeada con Identity, puedes agre
   ```typescript
   const config = new DocumentBuilder()
     .addBearerAuth()
-    // ... otras configuraciones
+    __ ... otras configuraciones
     .build();
   ```
 
@@ -124,9 +124,9 @@ Para integrar la autenticación que ya tienes planeada con Identity, puedes agre
         description: 'Enter JWT token',
         in: 'header',
       },
-      'JWT-auth', // Nombre de la seguridad
+      'JWT-auth', __ Nombre de la seguridad
     )
-    // ...
+    __ ...
     .build();
   ```
   Para controlar la exposición de este requisito por endpoint, puedes usar `@ApiBearerAuth()` y `@ApiSecurity()`.

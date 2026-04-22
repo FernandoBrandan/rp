@@ -1,3 +1,4 @@
+// src/infra/database/database.module.ts
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -18,12 +19,10 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
         password: config.get<string>('DB_PASS', 'postgres'),
         database: config.get<string>('DB_NAME', 'ecommerce'),
 
-        autoLoadEntities: true, // ← carga entidades registradas con forFeature()
+        autoLoadEntities: true,
+        synchronize: true,
+        logging: true,
 
-        synchronize: true, // ⚠️ SOLO DEV, NO USAR EN PRODUCCIÓN
-        // logging: true, // 👈 clave para ver queries
-
-        // retry si DB tarda en levantar
         retryAttempts: 5,
         retryDelay: 3000,
       }),

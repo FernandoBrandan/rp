@@ -1,3 +1,4 @@
+// src/infra/tokens/index.ts
 export const PRODUCT_REPOSITORY = Symbol('PRODUCT_REPOSITORY');
 export const CART_REPOSITORY = Symbol('CART_REPOSITORY');
 export const ORDER_REPOSITORY = Symbol('ORDER_REPOSITORY');
@@ -5,5 +6,5 @@ export const PAYMENT_PROVIDER = Symbol('PAYMENT_PROVIDER');
 export const PRODUCT_CHECKER = Symbol('PRODUCT_CHECKER');
 export const STOCK_SERVICE = Symbol('STOCK_SERVICE');
 export const LOGGER = Symbol('LOGGER');
-export const PAYMENT_ORDER_PORT = Symbol('PAYMENT_ORDER_PORT');
 export const REDIS_CLIENT = Symbol('REDIS_CLIENT');
+export const ORDER_FINDER = Symbol('ORDER_FINDER');
