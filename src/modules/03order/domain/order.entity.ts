@@ -98,4 +98,23 @@ export class Order implements IOrder {
     if (this.paymentUrl) return;
     this.paymentUrl = url;
   }
+
+  markPaymentGenerating() {
+    if (this.paymentStatus !== PaymentStatus.PENDING) return;
+    this.paymentStatus = PaymentStatus.GENERATING;
+  }
+
+  markPaymentReady() {
+    if (this.paymentStatus === PaymentStatus.READY) return;
+    if (this.paymentStatus === PaymentStatus.FAILED) return;
+    this.paymentStatus = PaymentStatus.READY;
+  }
+
+  markPaymentFailed() {
+    if (this.paymentStatus === PaymentStatus.FAILED) return;
+    if (this.paymentStatus === PaymentStatus.READY) {
+      throw new Error('Cannot fail payment link after it is ready');
+    }
+    this.paymentStatus = PaymentStatus.FAILED;
+  }
 }

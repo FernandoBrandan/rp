@@ -1,57 +1,153 @@
-##
+# Lista de tareas pendientes — estado actualizado
 
-“Idempotency bug: duplicate payment link on retry”
+## 🔴 Bugs / inconsistencias que quedan
 
-## Proximos pasos?
+1. **`paymentStatus` sigue en `PENDING` para siempre**
+   Nadie lo setea a `GENERATING`, `READY` o `FAILED` en el flujo. El campo existe, persiste, se mapea... pero es decorativo. Decisión: cablearlo (3 puntos de cambio) o revertirlo para no dejar deuda fantasma.
 
-### A. Suscriptor de Inventario(InventorySubscriber)
+2. **Comentarios de rutas viejas en adapters**
+   Los headers de estos archivos apuntan a paths que ya no existen:
+   - `catalog/infra/adapters/product-checker.adapter.ts` → dice `.service.ts`
+   - `catalog/infra/adapters/product-finder.adapter.ts` → dice `.service.ts`
+   - `catalog/infra/adapters/stock-reservation.adapter.ts` → dice `stock-validate.service.ts`
+   - `order/infra/adapters/order-finder.adapter.ts` → dice `.service.ts`
 
-- Escucha: OrderPaid
-- Acción: Confirmar Stock. Mueve el stock de "Reservado" a "Vendido"(salida definitiva).
-- Escucha: OrderPaymentFailed o OrderCancelled
-- Acción: Liberar Stock. Mueve de "Reservado" a "Disponible".
+3. **`'payment.approved'` string literal**
+   Ya desapareció con el refactor del `FakePaymentProvider` (ahora emite `ORDER_PAID` directo). ✅ Verificar con grep que no quedó rastro.
 
-### B. Suscriptor de Carrito(CartSubscriber)
+---
 
-- Escucha: OrderPaid
-- Acción: Vaciar el carrito del usuario.
-- ¿Por qué eventual? Porque si el carrito falla en borrarse, no queremos que el pago rebote.
-- El usuario simplemente verá su carrito lleno un segundo más.
+## 🟢 Quick wins
 
-### C. Suscriptor de Notificaciones(NotificationSubscriber)
+4. **Swagger completo**
+   - `@ApiTags('products')` / `'cart'` / `'orders'` / `'payments'` / `'health'` en cada controller
+   - `@ApiOperation({ summary })` en cada endpoint
+   - `@ApiResponse({ status, description })` en los casos importantes (200, 400, 404, 503)
 
-- Escucha: OrderCreated -> Envía "Tu orden está pendiente de pago".
-- Escucha: OrderPaid -> Envía "¡Gracias por tu compra! Factura adjunta".
+5. **Comentarios en `database.module.ts`**
+   Documentar:
+   - `autoLoadEntities: true` → carga entidades de `forFeature()`
+   - `synchronize: true` → ⚠️ **solo dev, nunca prod**
+   - `logging: true` → imprime queries
+   - Considerar mover estos a env vars (`DB_SYNC`, `DB_LOG`)
 
-## Implementar src/modules/01catalog/domain/stock-reservation.entity.ts
+6. **Verificar cleanup de Bull**
+   ```bash
+   rg "bull" package.json
+   rg "@nestjs/bull" src/
+   ```
+   Si no hay resultados en `src/`, sacar del `package.json`.
 
-**¿Cuándo sí necesitarías un agregado/entidad de dominio `StockReservation`?**
+7. **Borrar carpeta `04payments/domain/`** si quedó vacía (era `rmdir`).
 
-- Si la reserva tiene **reglas de negocio complejas**
-  (ej. expiración automática, no se puede liberar después de X tiempo, cambios de estado con validaciones).
+---
 
-- Si quieres mantener el **principio de DDD puro** (capa de dominio sin dependencias de infraestructura).
+## 🟡 Suscriptores de eventos (de tus notas)
 
-- Si necesitas **eventos de dominio** (ej. `StockReservationConfirmed`, `StockReservationExpired`).
+8. **`CartSubscriber`** (más simple, mejor punto de entrada)
+   - Ubicación: `02cart/application/listeners/order-paid.listener.ts`
+   - Escucha `ORDER_PAID` → `cartRepository.clear(order.userId)`
+   - Necesita `ORDER_FINDER` inyectado en `CartModule` (agregar `OrderModule` a imports... ojo con dependencia circular: `OrderModule` ya importa `CatalogModule`, `CartModule` importa `CatalogModule`. Si `CartModule` importa `OrderModule` y `OrderModule` no importa `CartModule`, no hay ciclo).
+   - Eventual: si falla, `logger.warn` y no romper el pago
 
-**Recomendación para tu nivel actual:**
-Quédate con la entidad de infraestructura (TypeORM) y la lógica en el servicio de aplicación.
+9. **`NotificationSubscriber`** (versión log-only primero)
+   - Ubicación: `03order/application/listeners/` o módulo nuevo `05notifications`
+   - Escucha `ORDER_CREATED` → log "pendiente de pago"
+   - Escucha `ORDER_PAID` → log "gracias por la compra"
+   - Después: `NotificationPort` + adaptador (SendGrid/SES)
 
-Es suficiente y evita over - engineering.
-Cuando la lógica de reservas crezca, refactorizas hacia un agregado de dominio.
+10. **`InventorySubscriber`** — probablemente **no hacer**
+    - Hoy `OrderPaidListener` de order ya confirma stock vía `StockPort`
+    - Moverlo a catalog desacopla, pero agrega una capa
+    - Hacer solo si stock crece (múltiples almacenes, expiraciones, reglas propias)
 
-## Comentarios para src/infra/database/database.module.ts
+---
 
-useFactory: (config: ConfigService) => ({})
+## 🔵 Integración real
 
-- autoLoadEntities: true, : ← carga entidades registradas con forFeature()
-- synchronize: true, : ⚠️ SOLO DEV, NO USAR EN PRODUCCIÓN
-- logging: true, : 👈 clave para ver queries
+11. **Implementar `MercadoPagoProvider`**
+    - SDK `mercadopago` o HTTP directo a su API
+    - Leer `MERCADOPAGO_ACCESS_TOKEN` de `ConfigService`
+    - Mapear respuesta → `{ url: string }`
+    - Manejar errores → `InfrastructureException`
+    - El switch ya está en `payment.module.ts` (`PAYMENT_PROVIDER=mercadopago`)
 
-## Configurar bien Swagger
+12. **Decidir sobre Bull** — y si vas, hacerlo bien
+    - Hoy: cero Bull, cero processor, cero queue. Bien.
+    - Cuándo sí:
+      - Sobrevivir crash entre `emit(ORDER_CREATED)` y respuesta del provider
+      - Reintentos con backoff ante fallos del provider
+      - Múltiples instancias con un solo worker por job
+    - Si vas: `jobId: payment-link:${orderId}` para dedupe (Bull sin `jobId` **genera duplicados**)
 
-## implementar - modules/04 payments/infra/providers/MercadoPago.provider.ts
+---
 
-async createPaymentLink(input: CreatePaymentDto): Promise<PaymentLink> {
-implementación real
-}
+## 🟠 Deuda técnica opcional
+
+13. **`Product` y `Cart` no usan `updateX` en los use-cases**
+    `UpdateProductUseCase` hace `product.name = ...` directo en vez de métodos del dominio. Funciona, pero rompe encapsulamiento. No es urgente.
+
+14. **`CartItem` VO es mutable**
+    `existing.quantity += item.quantity` dentro de `Cart.addItem`. Los VOs deberían ser inmutables. Refactor no urgente.
+
+15. **`Money` duplicado**
+    Existen `catalog/domain/value-objects/money.vo.ts` y `order/domain/value-objects/money.vo.ts`. Son distintos (order tiene `add` y `multiply`). Mover a `common/domain/` cuando duela.
+
+16. **`ProductStatus` es enum en `value-objects/`**
+    Convención: los `value-objects/` contienen clases VO, no enums. Mover a `domain/enums/` o dejarlo como está. Cosmético.
+
+17. **`Order.create` recibe `total` calculado, pero `IOrder` exige `total`**
+    Ya está bien con `CreateOrderProps`. Solo chequear que no haya quedado otro call-site.
+
+---
+
+## ⚫ Backlog / no hacer todavía
+
+18. **`StockReservation` como agregado de dominio** — no hacer. Over-engineering hasta que la reserva tenga reglas propias.
+
+19. **Mover lógica de stock de `OrderPaidListener` a un subscriber de catalog** — depende del punto 10.
+
+20. **Test suite** — no hay tests. Cuando el flujo esté estable, agregar e2e del happy path y del path de fallo del provider.
+
+---
+
+## Orden sugerido
+
+```
+Sprint 1 — cerrar prolijidad:
+  1. Decidir paymentStatus (cablear o revertir)
+  2. Limpiar comentarios de rutas viejas en adapters
+  3. Verificar cleanup de Bull
+  4. Borrar 04payments/domain si quedó
+  5. Swagger completo
+  6. Comentarios en database.module.ts
+
+Sprint 2 — event-driven:
+  7. CartSubscriber
+  8. NotificationSubscriber (log-only)
+  9. Evaluar InventorySubscriber (probablemente no)
+
+Sprint 3 — integración real:
+  10. MercadoPagoProvider real
+  11. Cablear paymentStatus end-to-end
+  12. Bull si se justifica
+  13. Tests e2e
+```
+
+---
+
+## Resumen ultra corto
+
+| Prioridad | Ítem |
+|---|---|
+| 🟡 | Cablear o revertir `paymentStatus` |
+| 🟢 | Limpiar comentarios de rutas viejas en 4 adapters |
+| 🟢 | Verificar Bull fuera del `package.json` |
+| 🟢 | Swagger `@ApiTags` + `@ApiOperation` |
+| 🟢 | Comentarios en `database.module.ts` |
+| 🟡 | `CartSubscriber` (vaciar carrito en `ORDER_PAID`) |
+| 🟡 | `NotificationSubscriber` (log-only) |
+| 🔵 | `MercadoPagoProvider` real |
+| 🔵 | Bull (solo si se justifica) |
+| ⚫ | Tests e2e |
+| ❌ | StockReservation como agregado, mover Inventory a catalog |

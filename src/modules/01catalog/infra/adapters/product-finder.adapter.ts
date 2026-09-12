@@ -1,4 +1,4 @@
-// src/modules/01catalog/infra/services/product-finder.service.ts
+// src/modules/01catalog/infra/adapters/product-finder.adapter.ts
 
 import { Inject, Injectable } from '@nestjs/common';
 

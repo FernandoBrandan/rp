@@ -1,31 +1,21 @@
-// src/infra/logger/logging.interceptor.ts
 import {
   Injectable,
   NestInterceptor,
   ExecutionContext,
   CallHandler,
   Inject,
-  Scope,
 } from '@nestjs/common';
 import { Observable, tap } from 'rxjs';
 import { Logger } from '@infra/logger/logger.interface';
 import { LOGGER } from '@infra/tokens';
 
-@Injectable({ scope: Scope.REQUEST })
+@Injectable()
 export class LoggingInterceptor implements NestInterceptor {
-  constructor(
-    @Inject(LOGGER)
-    private readonly logger: Logger,
-  ) {}
+  constructor(@Inject(LOGGER) private readonly logger: Logger) {}
 
-  async intercept(
-    context: ExecutionContext,
-    next: CallHandler,
-  ): Promise<Observable<any>> {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const now = Date.now();
-
     const req = context.switchToHttp().getRequest();
-
     const res = context.switchToHttp().getResponse();
     const { method, url: path } = req;
 
@@ -34,10 +24,8 @@ export class LoggingInterceptor implements NestInterceptor {
         next: () => {
           const durationMs = Date.now() - now;
           const status = res.statusCode;
-
           const level =
             status >= 500 ? 'error' : status >= 400 ? 'warn' : 'info';
-
           this.logger[level]('HTTP Request', {
             method,
             path,
@@ -48,10 +36,8 @@ export class LoggingInterceptor implements NestInterceptor {
         error: (err) => {
           const durationMs = Date.now() - now;
           const status = err.status || err.statusCode || 500;
-
           const level =
             status >= 500 ? 'error' : status >= 400 ? 'warn' : 'info';
-
           this.logger[level]('HTTP Request', {
             method,
             path,

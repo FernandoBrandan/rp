@@ -11,8 +11,8 @@ set -e
 
 # --- Configuración -------------------------------------------------
 SRC_DIR_NAME="src"
-STRUCTURE_FILE="structure.txt"
-FULLCODE_FILE="fullCode.txt"
+STRUCTURE_FILE="_structure.txt"
+FULLCODE_FILE="_fullCode.txt"
 SEPARATOR="________"
 
 # Extensiones/archivos a ignorar (binarios, imágenes, etc.)

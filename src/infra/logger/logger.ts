@@ -1,18 +1,23 @@
-// src/infra/logger/logger.ts
-import { REQUEST } from '@nestjs/core';
-import { Inject, Injectable, Optional, Scope } from '@nestjs/common';
-import { Request } from 'express';
-import { Logger } from './logger.interface';
+import { Injectable } from '@nestjs/common';
+import { AsyncLocalStorage } from 'async_hooks';
 import { createLogger, format, transports } from 'winston';
+import { Logger } from './logger.interface';
 
 const { combine, timestamp, printf, errors } = format;
 
+export interface CorrelationContext {
+  correlationId: string;
+}
+
+export const correlationStorage = new AsyncLocalStorage<CorrelationContext>();
+
 const logFormat = printf(
   ({ level, message, timestamp, stack, correlationId, ...meta }) => {
+    const cid = correlationId || 'NO-CID';
     const metaStr = Object.keys(meta).length ? ` ${JSON.stringify(meta)}` : '';
     return stack
-      ? `[${timestamp}] [${correlationId || 'NO-CID'}] ${level.toUpperCase()}: ${stack}`
-      : `[${timestamp}] [${correlationId || 'NO-CID'}] ${level.toUpperCase()}: ${message}${metaStr}`;
+      ? `[${timestamp}] [${cid}] ${level.toUpperCase()}: ${stack}`
+      : `[${timestamp}] [${cid}] ${level.toUpperCase()}: ${message}${metaStr}`;
   },
 );
 
@@ -26,28 +31,27 @@ const rootLogger = createLogger({
   transports: [new transports.Console()],
 });
 
-@Injectable({ scope: Scope.REQUEST })
+@Injectable()
 export class AppLogger implements Logger {
-  private logger: ReturnType<typeof rootLogger.child>;
-
-  constructor(@Optional() @Inject(REQUEST) private readonly req?: Request) {
-    const correlationId = (req as any)?.correlationId || 'APP-START';
-    this.logger = rootLogger.child({ correlationId });
+  private withContext(meta: Record<string, any> = {}) {
+    const correlationId =
+      correlationStorage.getStore()?.correlationId ?? 'APP-START';
+    return { ...meta, correlationId };
   }
 
   info(message: string, meta: Record<string, any> = {}) {
-    this.logger.info(message, meta);
+    rootLogger.info(message, this.withContext(meta));
   }
 
   error(message: string, meta: Record<string, any> = {}) {
-    this.logger.error(message, meta);
+    rootLogger.error(message, this.withContext(meta));
   }
 
   warn(message: string, meta: Record<string, any> = {}) {
-    this.logger.warn(message, meta);
+    rootLogger.warn(message, this.withContext(meta));
   }
 
   debug(message: string, meta: Record<string, any> = {}) {
-    this.logger.debug(message, meta);
+    rootLogger.debug(message, this.withContext(meta));
   }
 }

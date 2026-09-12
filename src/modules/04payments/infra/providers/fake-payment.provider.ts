@@ -1,48 +1,78 @@
-// modules/04 payments/infra/providers/fake-payment.provider.ts
-
 import { Inject, Injectable } from '@nestjs/common';
-import { PaymentProviderPort } from '@payment/application/ports/payment-provider.port';
-import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
-import { EventNames, OrderPaidEvent } from '@common/events/';
-import { LOGGER } from '@infra/tokens';
+import { ConfigService } from '@nestjs/config';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import {
+  EventNames,
+  OrderPaidEvent,
+  OrderPaymentFailedEvent,
+} from '@common/events';
 import { Logger } from '@infra/logger/logger.interface';
+import { LOGGER } from '@infra/tokens';
+import {
+  PaymentOrderSnapshot,
+  PaymentProviderPort,
+} from '../../application/ports/payment-provider.port';
+
+type FakeOutcome = 'approved' | 'failed' | 'pending';
 
 @Injectable()
 export class FakePaymentProvider implements PaymentProviderPort {
+  private readonly outcome: FakeOutcome;
+  private readonly delayMs: number;
+
   constructor(
     private readonly eventEmitter: EventEmitter2,
+    private readonly config: ConfigService,
+    @Inject(LOGGER) private readonly logger: Logger,
+  ) {
+    this.outcome = this.config.get<FakeOutcome>(
+      'FAKE_PAYMENT_OUTCOME',
+      'approved',
+    );
+    this.delayMs = Number(
+      this.config.get<string>('FAKE_PAYMENT_DELAY_MS', '3000'),
+    );
+  }
 
-    @Inject(LOGGER)
-    private readonly logger: Logger,
-  ) {}
+  async generatePaymentLink(
+    order: PaymentOrderSnapshot,
+  ): Promise<{ url: string }> {
+    const url = `http://fake-payment.local/pay/${order.id}`;
 
-  async generatePaymentLink(data: {
-    orderId: string;
-    total: number;
-    items: any[];
-  }): Promise<{ url: string }> {
-    this.logger.info('FakePaymentProvider - generatePaymentLink');
+    this.logger.info('FakePaymentProvider: link generated', {
+      orderId: order.id,
+      url,
+      outcome: this.outcome,
+      delayMs: this.delayMs,
+    });
 
-    const url = `http://fake-payment/${data.orderId}`;
-
-    setTimeout(() => {
-      this.eventEmitter.emit('payment.approved', {
-        orderId: data.orderId,
-      });
-    }, 3000);
+    this.scheduleOutcome(order.id);
 
     return { url };
   }
-}
 
-@Injectable()
-export class PaymentApprovedListener {
-  constructor(private readonly eventEmitter: EventEmitter2) {}
-  @OnEvent('payment.approved')
-  handle(payload: { orderId: string }) {
-    this.eventEmitter.emit(
-      EventNames.ORDER_PAID,
-      new OrderPaidEvent(payload.orderId),
-    );
+  private scheduleOutcome(orderId: string) {
+    if (this.outcome === 'pending') return;
+
+    setTimeout(() => {
+      if (this.outcome === 'approved') {
+        this.logger.info('FakePaymentProvider: simulating approval', {
+          orderId,
+        });
+        this.eventEmitter.emit(
+          EventNames.ORDER_PAID,
+          new OrderPaidEvent(orderId),
+        );
+        return;
+      }
+
+      this.logger.info('FakePaymentProvider: simulating failure', {
+        orderId,
+      });
+      this.eventEmitter.emit(
+        EventNames.ORDER_PAYMENT_FAILED,
+        new OrderPaymentFailedEvent(orderId, 'fake_provider_failed'),
+      );
+    }, this.delayMs).unref();
   }
 }

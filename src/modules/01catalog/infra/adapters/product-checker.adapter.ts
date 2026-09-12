@@ -1,4 +1,4 @@
-// src/modules/01catalog/infra/services/product-checker.service.ts
+// src/modules/01catalog/infra/adapters/product-checker.adapter.ts
 
 import { Inject, Injectable } from '@nestjs/common';
 

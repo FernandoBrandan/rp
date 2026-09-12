@@ -1,4 +1,4 @@
-// src/modules/01catalog/infra/services/stock-validate.service.ts
+// src/modules/01catalog/infra/adapters/stock-reservation.adapter.ts
 
 import { Inject, Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';

@@ -22,11 +22,14 @@ export class PaymentLinkCreatedListener {
     this.logger.info('Attaching payment URL to order', {
       orderId: event.orderId,
     });
+
     const order = await this.orderRepository.getOrderDetail(event.orderId);
     if (!order) return;
     if (order.paymentUrl) return;
+
     order.setPaymentUrl(event.paymentUrl);
     order.waiting_payment();
+    order.markPaymentReady();
     await this.orderRepository.update(order);
   }
 }

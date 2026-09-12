@@ -12,5 +12,6 @@ export const CART_REPOSITORY = Symbol('CART_REPOSITORY');
 
 export const ORDER_REPOSITORY = Symbol('ORDER_REPOSITORY');
 export const ORDER_FINDER = Symbol('ORDER_FINDER');
+export const ORDER_PAYMENT_STATUS = Symbol('ORDER_PAYMENT_STATUS');
 
 export const PAYMENT_PROVIDER = Symbol('PAYMENT_PROVIDER');
