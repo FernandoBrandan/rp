@@ -2,7 +2,7 @@
 
 import { Product } from '@catalog/domain/product.entity';
 import { Serial } from '@catalog/domain/value-objects/serial.vo';
-import { Money } from '@catalog/domain/value-objects/money.vo';
+import { Money } from '@common/domain/value-objects/money.vo';
 import { ProductStatus } from '@catalog/domain/enums/productStatus.enum';
 import { ProductEntity } from './product.orm-entity';
 

@@ -1,7 +1,7 @@
 // src/modules/01catalog/domain/product.entity.ts
 
 import { Serial } from './value-objects/serial.vo';
-import { Money } from './value-objects/money.vo';
+import { Money } from '@common/domain/value-objects/money.vo';
 import { ProductStatus } from './enums/productStatus.enum';
 
 export interface IProduct {

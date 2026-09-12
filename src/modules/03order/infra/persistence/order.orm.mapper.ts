@@ -1,5 +1,5 @@
 import { Order } from '@order/domain/order.entity';
-import { Money } from '@order/domain/value-objects/money.vo';
+import { Money } from '@common/domain/value-objects/money.vo';
 import { OrderItem } from '@order/domain/value-objects/orderItem.vo';
 import { OrderStatus } from '@order/domain/enums/orderStatus.enum';
 import { PaymentStatus } from '@order/domain/enums/paymentStatus.enum';

@@ -1,5 +1,5 @@
 // src/modules/03order/domain/value-objects/orderItem.vo.ts
-import { Money } from './money.vo';
+import { Money } from '@common/domain/value-objects/money.vo';
 
 export class OrderItem {
   constructor(

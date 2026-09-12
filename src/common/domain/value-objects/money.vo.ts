@@ -1,4 +1,3 @@
-// src/modules/03order/domain/value-objects/money.vo.ts
 export class Money {
   constructor(private readonly amount: number) {
     if (amount < 0) {
@@ -6,7 +5,7 @@ export class Money {
     }
   }
 
-  getValue() {
+  getValue(): number {
     return this.amount;
   }
 

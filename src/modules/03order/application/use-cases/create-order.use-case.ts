@@ -10,7 +10,7 @@ import { Logger } from '@infra/logger/logger.interface';
 
 import { Order } from '@order/domain/order.entity';
 import { OrderItem } from '@order/domain/value-objects/orderItem.vo';
-import { Money } from '@order/domain/value-objects/money.vo';
+import { Money } from '@common/domain/value-objects/money.vo';
 
 import { OrderRepository } from '@order/domain/repositories/order.repository';
 
