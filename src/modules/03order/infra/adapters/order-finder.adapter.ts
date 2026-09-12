@@ -3,7 +3,7 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { ORDER_REPOSITORY } from '@infra/tokens';
 import { OrderRepository } from '@order/domain/repositories/order.repository';
-import { OrderFinderPort } from '@order/application/ports/order-finder.port';
+import { OrderFinderPort } from '@payment/application/ports/order-finder.port';
 
 @Injectable()
 export class OrderFinderService implements OrderFinderPort {

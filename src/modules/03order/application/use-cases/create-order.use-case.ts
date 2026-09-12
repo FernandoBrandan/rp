@@ -145,7 +145,7 @@ export class CreateOrderUseCase {
       userId: dto.userId,
     });
 
-    return OrderMapper.toResponse(existingOrder);
+    return OrderMapper.toResponse(order);
   }
 }
 

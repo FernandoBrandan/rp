@@ -9,7 +9,7 @@ import { CreateOrderUseCase } from './application/use-cases/create-order.use-cas
 import { OrderEntity } from './infra/persistence/order.orm-entity';
 import { TypeOrmOrderRepository } from './infra/repositories/typeorm-order.repository';
 import { OrderIdGenerator } from './infra/services/order-id-generator.service';
-import { OrderFinderService } from './infra/services/order-finder.service';
+import { OrderFinderService } from './infra/adapters/order-finder.adapter';
 import { PaymentLinkCreatedListener } from './application/listeners/payment-link-created.listener';
 import { OrderPaidListener } from './application/listeners/order-paid.listener';
 import { OrderPaymentFailedListener } from './application/listeners/order-payment-failed.listener';

@@ -1,4 +1,3 @@
-// src/modules/03order/infra/persistence/order.orm-entity.ts
 import { Entity, Column, PrimaryColumn } from 'typeorm';
 
 @Entity('orders')
@@ -21,9 +20,12 @@ export class OrderEntity {
   @Column()
   status: string;
 
-  @Column({ nullable: true })
-  paymentUrl: string;
-
   @Column()
   reservationId: string;
+
+  @Column({ default: 'PENDING' })
+  paymentStatus: string;
+
+  @Column({ nullable: true })
+  paymentUrl: string;
 }

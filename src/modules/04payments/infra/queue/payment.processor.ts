@@ -1,8 +1,14 @@
-import { Process, Processor } from '@nestjs/bull';
-import { Job } from 'bull';
-import { InjectQueue } from '@nestjs/bull';
-import { Queue } from 'bull';
+//src/modules/04payments/infra/queue/payment.processor.ts
+import { Injectable } from '@nestjs/common';
+import { Process, Processor, InjectQueue } from '@nestjs/bull';
+import { Job, Queue } from 'bull';
 
+@Injectable()
+class PaymentService {
+  async generateAndSaveLink(orderId: string): Promise<void> {
+    throw new Error('Not implemented');
+  }
+}
 @Processor('payment-link')
 export class PaymentLinkProcessor {
   constructor(

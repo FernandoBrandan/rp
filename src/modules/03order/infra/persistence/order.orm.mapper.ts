@@ -1,9 +1,8 @@
-// src/modules/03order/infra/persistence/order.orm.mapper.ts
-
 import { Order } from '@order/domain/order.entity';
 import { Money } from '@order/domain/value-objects/money.vo';
 import { OrderItem } from '@order/domain/value-objects/orderItem.vo';
 import { OrderStatus } from '@order/domain/value-objects/orderStatus.vo';
+import { PaymentStatus } from '@order/domain/value-objects/paymentStatus.vo';
 import { OrderEntity } from './order.orm-entity';
 
 export class OrderMapper {
@@ -23,7 +22,6 @@ export class OrderMapper {
       orm.id,
       orm.userId,
       orm.idempotencyKey,
-
       orm.items.map(
         (item) =>
           new OrderItem(item.productId, item.quantity, new Money(item.price)),
@@ -31,6 +29,7 @@ export class OrderMapper {
       new Money(orm.total),
       status,
       orm.reservationId,
+      orm.paymentStatus as PaymentStatus,
       orm.paymentUrl,
     );
   }
@@ -48,6 +47,7 @@ export class OrderMapper {
       total: domain.total.getValue(),
       status: domain.status,
       reservationId: domain.reservationId,
+      paymentStatus: domain.paymentStatus,
       paymentUrl: domain.paymentUrl,
     };
   }

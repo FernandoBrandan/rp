@@ -5,7 +5,7 @@ import { EventNames } from '@common/events/event-names';
 import { Logger } from '@infra/logger/logger.interface';
 import { LOGGER, ORDER_FINDER } from '@infra/tokens';
 
-import { OrderFinderPort } from '@order/application/ports/order-finder.port';
+import { OrderFinderPort } from '../ports/order-finder.port';
 import { CreatePaymentLinkUseCase } from '../use-cases/create-payment-link.use-case';
 
 import {
@@ -15,7 +15,6 @@ import {
 
 @Injectable()
 export class OrderCreatedListener {
-  s;
   constructor(
     private readonly eventEmitter: EventEmitter2,
     @Inject(ORDER_FINDER) private readonly orderFinder: OrderFinderPort,

@@ -9,6 +9,18 @@ interface IOrder {
   userId: string;
   idempotencyKey: string;
   items: OrderItem[];
+  total: Money;
+  status: OrderStatus;
+  reservationId: string;
+  paymentStatus: PaymentStatus;
+  paymentUrl?: string;
+}
+
+interface CreateOrderProps {
+  id: string;
+  userId: string;
+  idempotencyKey: string;
+  items: OrderItem[];
   reservationId: string;
 }
 
@@ -21,11 +33,11 @@ export class Order implements IOrder {
     public readonly total: Money,
     public status: OrderStatus = OrderStatus.PENDING,
     public reservationId: string,
-    // public paymentStatus: PaymentStatus = PaymentStatus.PENDING,
+    public paymentStatus: PaymentStatus = PaymentStatus.PENDING,
     public paymentUrl?: string,
   ) {}
 
-  static create(props: IOrder): Order {
+  static create(props: CreateOrderProps): Order {
     if (!props.items || props.items.length === 0)
       throw new Error('Order must have at least one item');
 
@@ -42,7 +54,8 @@ export class Order implements IOrder {
       total,
       OrderStatus.PENDING,
       props.reservationId,
-      // PaymentStatus.PENDING,
+      PaymentStatus.PENDING,
+      // paymentUrl  undefined por default
     );
   }
 

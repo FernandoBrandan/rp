@@ -25,10 +25,7 @@ export class ProductOrmMapper {
       name: domain.name,
       price: domain.price.getValue(),
       stock: domain.stock,
-      status:
-        domain.status === 'ACTIVE'
-          ? ProductStatus.ACTIVE
-          : ProductStatus.INACTIVE,
+      status: domain.status,
     };
   }
 }
