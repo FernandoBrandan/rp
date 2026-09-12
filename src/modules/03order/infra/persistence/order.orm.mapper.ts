@@ -1,11 +1,11 @@
 import { Order } from '@order/domain/order.entity';
 import { Money } from '@order/domain/value-objects/money.vo';
 import { OrderItem } from '@order/domain/value-objects/orderItem.vo';
-import { OrderStatus } from '@order/domain/value-objects/orderStatus.vo';
-import { PaymentStatus } from '@order/domain/value-objects/paymentStatus.vo';
+import { OrderStatus } from '@order/domain/enums/orderStatus.enum';
+import { PaymentStatus } from '@order/domain/enums/paymentStatus.enum';
 import { OrderEntity } from './order.orm-entity';
 
-export class OrderMapper {
+export class OrderOrmMapper {
   static toDomain(orm: OrderEntity): Order {
     const statusMap: Record<string, OrderStatus> = {
       PENDING: OrderStatus.PENDING,

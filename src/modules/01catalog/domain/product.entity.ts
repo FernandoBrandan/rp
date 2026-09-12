@@ -2,7 +2,7 @@
 
 import { Serial } from './value-objects/serial.vo';
 import { Money } from './value-objects/money.vo';
-import { ProductStatus } from './value-objects/productStatus.vo';
+import { ProductStatus } from './enums/productStatus.enum';
 
 export interface IProduct {
   id: string;
@@ -23,20 +23,30 @@ export class Product implements IProduct {
     public status: ProductStatus = ProductStatus.ACTIVE,
   ) {}
 
+  updateName(name: string) {
+    const trimmed = name.trim();
+    if (trimmed.length === 0) {
+      throw new Error('Product name cannot be empty');
+    }
+    this.name = trimmed;
+  }
+
   updatePrice(price: Money) {
     this.price = price;
   }
 
   updateStock(stock: number) {
-    if (stock < 0) throw new Error('Invalid stock');
+    if (!Number.isInteger(stock) || stock < 0) {
+      throw new Error('Invalid stock');
+    }
     this.stock = stock;
-  }
-
-  deactivate() {
-    this.status = ProductStatus.INACTIVE;
   }
 
   activate() {
     this.status = ProductStatus.ACTIVE;
+  }
+
+  deactivate() {
+    this.status = ProductStatus.INACTIVE;
   }
 }

@@ -14,10 +14,10 @@ export class Cart {
   ) {}
 
   addItem(item: CartItem) {
-    const existing = this.items.find((i) => i.productId === item.productId);
+    const idx = this.items.findIndex((i) => i.productId === item.productId);
 
-    if (existing) {
-      existing.quantity += item.quantity;
+    if (idx !== -1) {
+      this.items[idx] = this.items[idx].addQuantity(item.quantity);
       return;
     }
 
@@ -31,9 +31,8 @@ export class Cart {
   }
 
   updateQuantity(productId: string, quantity: number) {
-    const item = this.items.find((i) => i.productId === productId);
-    if (!item) throw new Error('Item not found');
-
-    item.quantity = quantity;
+    const idx = this.items.findIndex((i) => i.productId === productId);
+    if (idx === -1) throw new Error('Item not found');
+    this.items[idx] = this.items[idx].withQuantity(quantity);
   }
 }

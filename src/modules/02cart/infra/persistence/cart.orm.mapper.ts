@@ -3,7 +3,7 @@ import { Cart } from '@cart/domain/cart.entity';
 import { CartItem } from '@cart/domain/value-objects/cartItem.vo';
 import { CartOrmEntity } from './cart.orm-entity';
 
-export class CartMapper {
+export class CartOrmMapper {
   static toDomain(orm: CartOrmEntity): Cart {
     const domainItems = orm.items.map(
       (item) => new CartItem(item.productId, item.quantity),

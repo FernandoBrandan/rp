@@ -1,4 +1,4 @@
-// rp/src/modules/03order/domain/value-objects/paymentStatus.vo.ts
+// src/modules/03order/domain/value-objects/paymentStatus.vo.ts
 
 export enum PaymentStatus {
   PENDING = 'PENDING',

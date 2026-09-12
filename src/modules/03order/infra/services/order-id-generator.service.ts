@@ -1,4 +1,4 @@
-// order/infra/services/order-id-generator.service.ts
+// src/modules/03order/infra/services/order-id-generator.service.ts
 import { Inject, Injectable } from '@nestjs/common';
 import { LOGGER, REDIS_CLIENT } from '@infra/tokens';
 import { Logger } from '@infra/logger/logger.interface';

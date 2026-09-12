@@ -5,7 +5,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { Logger } from '@infra/logger/logger.interface';
 
 import { ProductRepository } from '@catalog/domain/repositories/product.repository';
-import { ProductStatus } from '@catalog/domain/value-objects/productStatus.vo';
+import { ProductStatus } from '@catalog/domain/enums/productStatus.enum';
 
 import { LOGGER, PRODUCT_REPOSITORY } from '@infra/tokens';
 import { ProductCheckerPort } from '@cart/application/ports/product-checker.port';

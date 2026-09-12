@@ -6,7 +6,7 @@ import { InfrastructureException } from '@common/exceptions/infrastructure.excep
 import { Cart } from '@cart/domain/cart.entity';
 import { CartRepository } from '@cart/domain/repositories/cart.repository';
 import { CartOrmEntity } from '../persistence/cart.orm-entity';
-import { CartMapper } from '../persistence/cart.orm.mapper';
+import { CartOrmMapper } from '../persistence/cart.orm.mapper';
 
 @Injectable()
 export class TypeOrmCartRepository implements CartRepository {
@@ -18,7 +18,7 @@ export class TypeOrmCartRepository implements CartRepository {
   async getCart(userId: string): Promise<Cart | null> {
     try {
       const orm = await this.ormRepo.findOne({ where: { userId } });
-      return orm ? CartMapper.toDomain(orm) : null;
+      return orm ? CartOrmMapper.toDomain(orm) : null;
     } catch (error) {
       this.handleConnectionError(error);
     }
@@ -26,7 +26,7 @@ export class TypeOrmCartRepository implements CartRepository {
 
   async save(cart: Cart): Promise<void> {
     try {
-      const persistenceModel = CartMapper.toPersistence(cart);
+      const persistenceModel = CartOrmMapper.toPersistence(cart);
 
       const existing = await this.ormRepo.findOne({
         where: { userId: cart.userId },

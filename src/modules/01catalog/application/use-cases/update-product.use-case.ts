@@ -4,10 +4,10 @@ import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { Logger } from '@infra/logger/logger.interface';
 
 import { Money } from '@catalog/domain/value-objects/money.vo';
+import { ProductStatus } from '@catalog/domain/enums/productStatus.enum';
 import { ProductRepository } from '@catalog/domain/repositories/product.repository';
 import { LOGGER, PRODUCT_REPOSITORY } from '@infra/tokens';
 import { UpdateProductDTO } from '../dto/request/update-product.request.dto';
-
 import { ProductMapper } from '../mappers/product.mapper';
 
 @Injectable()
@@ -29,17 +29,19 @@ export class UpdateProductUseCase {
       throw new NotFoundException('Product not found');
     }
 
-    product.name = dto.name ?? product.name;
-    product.price =
-      dto.price !== undefined ? new Money(dto.price) : product.price;
-    product.stock = dto.stock ?? product.stock;
-    product.status = dto.status ?? product.status;
+    if (dto.name !== undefined) product.updateName(dto.name);
+    if (dto.price !== undefined) product.updatePrice(new Money(dto.price));
+    if (dto.stock !== undefined) product.updateStock(dto.stock);
+    if (dto.status !== undefined) {
+      if (dto.status === ProductStatus.ACTIVE) product.activate();
+      else product.deactivate();
+    }
 
     await this.productRepository.save(product);
 
     this.logger.info('Product updated', {
       id: product.id,
-      serial: product.serial,
+      serial: product.serial.getValue(),
     });
 
     return ProductMapper.toResponse(product);

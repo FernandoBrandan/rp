@@ -6,7 +6,7 @@ import { InfrastructureException } from '@common/exceptions/infrastructure.excep
 import { Order } from '@order/domain/order.entity';
 import { OrderRepository } from '@order/domain/repositories/order.repository';
 import { OrderEntity } from '../persistence/order.orm-entity';
-import { OrderMapper } from '../persistence/order.orm.mapper';
+import { OrderOrmMapper } from '../persistence/order.orm.mapper';
 
 @Injectable()
 export class TypeOrmOrderRepository implements OrderRepository {
@@ -17,7 +17,7 @@ export class TypeOrmOrderRepository implements OrderRepository {
 
   async createOrder(order: Order): Promise<void> {
     try {
-      const entity = this.ormRepo.create(OrderMapper.toPersistence(order));
+      const entity = this.ormRepo.create(OrderOrmMapper.toPersistence(order));
       await this.ormRepo.save(entity);
     } catch (error) {
       this.handleConnectionError(error);
@@ -27,7 +27,7 @@ export class TypeOrmOrderRepository implements OrderRepository {
   async getOrdersByUser(userId: string): Promise<Order[]> {
     try {
       const orms = await this.ormRepo.find({ where: { userId } });
-      return orms.map(OrderMapper.toDomain);
+      return orms.map(OrderOrmMapper.toDomain);
     } catch (error) {
       this.handleConnectionError(error);
     }
@@ -36,7 +36,7 @@ export class TypeOrmOrderRepository implements OrderRepository {
   async getOrderDetail(id: string): Promise<Order | null> {
     try {
       const orm = await this.ormRepo.findOne({ where: { id } });
-      return orm ? OrderMapper.toDomain(orm) : null;
+      return orm ? OrderOrmMapper.toDomain(orm) : null;
     } catch (error) {
       this.handleConnectionError(error);
     }
@@ -44,7 +44,7 @@ export class TypeOrmOrderRepository implements OrderRepository {
 
   async update(order: Order): Promise<void> {
     try {
-      const persistenceModel = OrderMapper.toPersistence(order);
+      const persistenceModel = OrderOrmMapper.toPersistence(order);
       const entity = await this.ormRepo.preload(persistenceModel);
 
       if (entity) {
@@ -58,7 +58,7 @@ export class TypeOrmOrderRepository implements OrderRepository {
   async findByIdempotencyKey(idempotencyKey: string): Promise<Order | null> {
     try {
       const orm = await this.ormRepo.findOne({ where: { idempotencyKey } });
-      return orm ? OrderMapper.toDomain(orm) : null;
+      return orm ? OrderOrmMapper.toDomain(orm) : null;
     } catch (error) {
       this.handleConnectionError(error);
     }

@@ -1,4 +1,4 @@
-// src/infra/redis/redisService.service.ts
+// src/infra/redis/redis.service.ts
 import { REDIS_CLIENT } from '@infra/tokens';
 import { Inject, Injectable } from '@nestjs/common';
 import Redis from 'ioredis';

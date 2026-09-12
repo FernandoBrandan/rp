@@ -1,8 +1,8 @@
 // src/modules/03order/domain/order.entity.ts
 import { OrderItem } from './value-objects/orderItem.vo';
 import { Money } from './value-objects/money.vo';
-import { OrderStatus } from './value-objects/orderStatus.vo';
-import { PaymentStatus } from './value-objects/paymentStatus.vo';
+import { OrderStatus } from './enums/orderStatus.enum';
+import { PaymentStatus } from './enums/paymentStatus.enum';
 
 interface IOrder {
   id: string;

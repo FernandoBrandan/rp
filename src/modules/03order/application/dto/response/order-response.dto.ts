@@ -1,6 +1,7 @@
 // src/modules/03order/application/dto/response/order-response.dto.ts
 
 import { ApiProperty } from '@nestjs/swagger';
+import { OrderStatus } from '@order/domain/enums/orderStatus.enum';
 
 export class OrderItemResponseDTO {
   @ApiProperty({ example: 'a1b2c3d4-...' })
@@ -20,10 +21,7 @@ export class OrderResponseDTO {
   @ApiProperty({ example: 'user-123' })
   userId: string;
 
-  @ApiProperty({
-    example: 'PENDING',
-    enum: ['PENDING', 'WAITING_PAYMENT', 'PAID', 'COMPLETED', 'FAILED'],
-  })
+  @ApiProperty({ enum: OrderStatus, example: OrderStatus.PENDING })
   status: string;
 
   @ApiProperty({ example: 3001.98 })
