@@ -1,31 +1,45 @@
-## Swagger completo
+### 🟡 Suscriptores de eventos (los de tu nota)
 
-@ApiOperation({ summary }) en cada endpoint
+11. **`CartSubscriber`** (más simple, mejor punto de entrada)
+    - Escucha `OrderPaid` → `cartRepository.clear(userId)`
+    - Necesita `ORDER_FINDER` para leer el `userId` desde la orden
+    - Eventual: si falla, log `warn` y no rompe el pago
+    - Ubicación: `02cart/application/listeners/order-paid.listener.ts`
+    - Registrar en `CartModule`
 
-```
-// src/modules/02cart/presentation/cart.controller.ts
- @Get(':userId')
-  @ApiOperation({ summary: 'Obtener el carrito de un usuario (con precios)' })
-  @ApiParam({
-    name: 'userId',
-    description: 'ID del usuario',
-    example: 'user-123',
-  })
-  @ApiOkResponse({
-    description: 'Carrito del usuario',
-    type: CartResponseDTO,
-  })
-  get(@Param('userId') userId: string): Promise<CartResponseDTO> {
-    return this.getCartUC.execute(userId);
-  }
-```
+12. **`NotificationSubscriber`** (versión log-only)
+    - Escucha `OrderCreated` → `logger.info('Notificación: orden pendiente de pago')`
+    - Escucha `OrderPaid` → `logger.info('Notificación: gracias por tu compra')`
+    - Ubicación: `04notifications/` (módulo nuevo) o dentro de `03order/application/listeners/`
+    - Para MVP: solo log. Después: `NotificationPort` + adaptador SendGrid/SES.
 
-## Pendiente (segunda pasada, si querés)
+13. **`InventorySubscriber`** — evaluar si vale la pena separarlo
+    - Hoy `OrderPaidListener` de order ya confirma stock vía `StockPort`
+    - Mover la responsabilidad a catalog **desacopla order de stock**, pero agrega un salto extra
+    - **Decisión recomendada**: dejarlo como está. Es un refactor de gusto, no de correctitud. Si en algún momento `stock` crece (múltiples almacenes, expiraciones), ahí se separa.
 
-- Los DTOs de request están sin decorar:
-  - CreateProductDTO, UpdateProductDTO
-  - AddToCartDTO, CartItemDTO, UpdateQuantityDTO
-  - CreateOrderDTO, OrderItemDTO
+---
 
-Cada uno necesita @ApiProperty en cada campo para que la UI muestre ejemplos y validaciones.
-Es una pasada rápida, pero mecánica (~40 decoradores).
+### 🔵 Integración real
+
+14. **Implementar `MercadoPagoProvider`**
+    - `generatePaymentLink` real (SDK `mercadopago` o HTTP contra su API)
+    - Env: `MERCADOPAGO_ACCESS_TOKEN` vía `ConfigService`
+    - En `payment.module.ts` ya tenés el switch por `PAYMENT_PROVIDER`, solo tenés que setear la env
+    - Manejo de errores: mapear a `InfrastructureException`
+
+15. **Decidir sobre Bull** — y si vas, hacerlo bien
+    - Hoy: sin processor, sin uso, solo el `registerQueue` muerto
+    - Cuándo sí:
+      - El link de pago tiene que generarse aunque el proceso muera entre el POST y la respuesta del provider
+      - Necesitás retries con backoff ante fallos del provider
+      - Vas a correr múltiples instancias y querés un solo worker por job
+    - Si vas: `jobId: payment-link:${orderId}` para dedupe (Bull sin `jobId` **genera duplicados**, mismo bug que estás tratando de evitar)
+
+---
+
+# ⚫ Backlog
+
+- Tests e2e — happy path, fallo del provider, concurrencia por idempotencyKey.
+- Money duplicado — mover a common/domain/ cuando toques ambos módulos.
+- InventorySubscriber — solo si stock crece.

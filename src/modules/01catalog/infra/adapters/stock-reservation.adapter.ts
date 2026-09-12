@@ -8,6 +8,7 @@ import { Logger } from '@infra/logger/logger.interface';
 import { LOGGER } from '@infra/tokens';
 import { StockPort } from '@order/application/ports/stock.port';
 import { StockReservationEntity } from '../persistence/stock-reservation.orm-entity';
+import { InsufficientStockException } from '@common/exceptions/insufficient-stock.exception';
 
 @Injectable()
 export class StockReservationAdapter implements StockPort {
@@ -38,7 +39,7 @@ export class StockReservationAdapter implements StockPort {
           })
           .execute();
         if (result.affected === 0) {
-          throw new Error(`Insufficient stock for product ${item.productId}`);
+          throw new InsufficientStockException(item.productId);
         }
       }
 

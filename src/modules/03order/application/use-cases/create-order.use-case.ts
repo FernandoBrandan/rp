@@ -31,6 +31,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { EventNames } from '@common/events/event-names';
 import { OrderCreatedEvent } from '@common/events/';
 import { OrderMapper } from '../mappers/order.mapper';
+import { InsufficientStockException } from '@common/exceptions/insufficient-stock.exception';
 
 @Injectable()
 export class CreateOrderUseCase {
@@ -93,10 +94,18 @@ export class CreateOrderUseCase {
       return new OrderItem(i.productId, i.quantity, new Money(product.price));
     });
 
-    const reservationId = await this.stockService.reserveStock(
-      items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
-      orderId,
-    );
+    let reservationId: string;
+    try {
+      reservationId = await this.stockService.reserveStock(
+        items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
+        orderId,
+      );
+    } catch (error) {
+      if (error instanceof InsufficientStockException) {
+        throw new BadRequestException(error.message);
+      }
+      throw error;
+    }
 
     const order = Order.create({
       id: orderId,
