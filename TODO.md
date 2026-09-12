@@ -1,42 +1,6 @@
-<!-- TODO.md -->
+##
 
-## 💥 Problemas de OrderCreated → Event → PaymentService
-
-create-order.use-case.ts linea 85
-
-- debugging difícil
-- más moving parts
-- no sabés si el problema es order o payment
-- sobreingeniería para tu estado actual
-- soluciones ??????
-
-## Traer comentarios
-
-### create-order.use-case.ts linea 70
-
-- Implementado -> ver si testea bien ja!
-- No es escalable (- loop + queries | múltiples productos → múltiples updates)
-- Evolución futura - Cuando escales:
-- - bulk update
-- - o tabla de reservas
-- - o sistema async
-
-- El siguiente codigo no es escalable
-
-```ts
-const items = dto.items.map(
-  (i) => new OrderItem(i.productId, i.quantity, new Money(i.price)),
-);
-```
-
-### create-order.use-case.ts linea 90
-
-Validar que generatelink tenga retry
-
-- 6. El link de pago no se regenera en retry de idempotencia
-- if (existingOrder) return OrderResponseDTO.fromDomain(existingOrder);
-- Si la primera llamada creó la orden pero falló al generar el link, el cliente recibe una orden sin paymentUrl.
-- Consecuencia: El cliente nunca ve la URL para pagar, y no hay forma de reintentar.
+“Idempotency bug: duplicate payment link on retry”
 
 ## Proximos pasos?
 

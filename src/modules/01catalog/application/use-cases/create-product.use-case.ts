@@ -5,10 +5,12 @@ import { customAlphabet } from 'nanoid';
 
 import { Logger } from '@infra/logger/logger.interface';
 
-import { Product } from '../../domain/product.entity';
-import { Serial } from '../../domain/value-objects/serial.vo';
-import { Money } from '../../domain/value-objects/money.vo';
-import { ProductRepository } from '../../domain/repositories/product.repository';
+import { Product } from '@catalog/domain/product.entity';
+import { Serial } from '@catalog/domain/value-objects/serial.vo';
+import { Money } from '@catalog/domain/value-objects/money.vo';
+import { ProductStatus } from '@catalog/domain/value-objects/productStatus.vo';
+
+import { ProductRepository } from '@catalog/domain/repositories/product.repository';
 
 import { CreateProductDTO } from '../dto/request/create-product.request.dto';
 
@@ -38,6 +40,7 @@ export class CreateProductUseCase {
       dto.name,
       new Money(dto.price),
       dto.stock,
+      dto.status ?? ProductStatus.ACTIVE,
     );
 
     try {

@@ -2,8 +2,8 @@
 
 import { Injectable, Inject } from '@nestjs/common';
 import { ORDER_REPOSITORY } from '@infra/tokens';
-import { OrderRepository } from '../../domain/repositories/order.repository';
-import { OrderFinderPort } from '../../application/ports/order-finder.port';
+import { OrderRepository } from '@order/domain/repositories/order.repository';
+import { OrderFinderPort } from '@order/application/ports/order-finder.port';
 
 @Injectable()
 export class OrderFinderService implements OrderFinderPort {

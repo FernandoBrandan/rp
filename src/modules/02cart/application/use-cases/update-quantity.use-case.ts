@@ -8,7 +8,7 @@ import {
 
 import { Logger } from '@infra/logger/logger.interface';
 
-import { CartRepository } from '../../domain/repositories/cart.repository';
+import { CartRepository } from '@cart/domain/repositories/cart.repository';
 import { ProductCheckerPort } from '../ports/product-checker.port';
 import { UpdateQuantityDTO } from '../dto/request/update-quantity.request.dto';
 import { CartMapper } from '../mappers/cart.mapper';

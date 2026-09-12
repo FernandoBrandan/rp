@@ -2,10 +2,10 @@
 
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { InfrastructureException } from '@common/exceptions/infrastructure.exception';
-import { Product } from '../../domain/product.entity';
-import { ProductRepository } from '../../domain/repositories/product.repository';
+import { Product } from '@catalog/domain/product.entity';
+import { ProductRepository } from '@catalog/domain/repositories/product.repository';
 import { ProductEntity } from '../persistence/product.orm-entity';
 import { ProductOrmMapper } from '../persistence/product.orm.mapper';
 
@@ -31,6 +31,16 @@ export class TypeOrmProductRepository implements ProductRepository {
     try {
       const orm = await this.ormRepo.findOne({ where: { id } });
       return orm ? ProductOrmMapper.toDomain(orm) : null;
+    } catch (error) {
+      this.handleConnectionError(error);
+    }
+  }
+
+  async findByIds(ids: string[]): Promise<Product[]> {
+    try {
+      if (ids.length === 0) return [];
+      const orms = await this.ormRepo.find({ where: { id: In(ids) } });
+      return orms.map(ProductOrmMapper.toDomain);
     } catch (error) {
       this.handleConnectionError(error);
     }

@@ -4,6 +4,7 @@ import { LoggerModule } from '@infra/logger/logger.module';
 import {
   PRODUCT_REPOSITORY,
   PRODUCT_CHECKER,
+  PRODUCT_FINDER,
   STOCK_SERVICE,
 } from '@infra/tokens';
 import { CatalogController } from './presentation/catalog.controller';
@@ -14,8 +15,9 @@ import { GetProductUseCase } from './application/use-cases/get-product.use-case'
 import { ProductEntity } from './infra/persistence/product.orm-entity';
 import { StockReservationEntity } from './infra/persistence/stock-reservation.orm-entity';
 import { TypeOrmProductRepository } from './infra/repositories/typeorm-product.repository';
-import { ProductCheckerService } from './infra/services/product-checker.service';
-import { StockValidateService } from './infra/services/stock-validate.service';
+import { ProductCheckerAdapter } from './infra/adapters/product-checker.adapter';
+import { ProductFinderAdapter } from './infra/adapters/product-finder.adapter';
+import { StockReservationAdapter } from './infra/adapters/stock-reservation.adapter';
 
 @Module({
   imports: [
@@ -32,17 +34,22 @@ import { StockValidateService } from './infra/services/stock-validate.service';
       provide: PRODUCT_REPOSITORY,
       useClass: TypeOrmProductRepository,
     },
-    ProductCheckerService,
+    ProductCheckerAdapter,
     {
       provide: PRODUCT_CHECKER,
-      useExisting: ProductCheckerService,
+      useExisting: ProductCheckerAdapter,
     },
-    StockValidateService,
+    StockReservationAdapter,
     {
       provide: STOCK_SERVICE,
-      useExisting: StockValidateService,
+      useExisting: StockReservationAdapter,
+    },
+    ProductFinderAdapter,
+    {
+      provide: PRODUCT_FINDER,
+      useExisting: ProductFinderAdapter,
     },
   ],
-  exports: [PRODUCT_REPOSITORY, PRODUCT_CHECKER, STOCK_SERVICE],
+  exports: [PRODUCT_REPOSITORY, PRODUCT_CHECKER, STOCK_SERVICE, PRODUCT_FINDER],
 })
 export class CatalogModule {}

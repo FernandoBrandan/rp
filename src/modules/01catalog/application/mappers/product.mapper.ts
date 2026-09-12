@@ -1,5 +1,5 @@
 // product.mapper.ts
-import { Product } from '../../domain/product.entity';
+import { Product } from '@catalog/domain/product.entity';
 import { ProductResponseDTO } from '../dto/response/product.response.dto';
 
 export class ProductMapper {
@@ -10,7 +10,7 @@ export class ProductMapper {
       name: product.name,
       price: product.price.getValue(),
       stock: product.stock,
-      status: product.status.getValue(),
+      status: product.status,
     };
   }
 }

@@ -2,7 +2,7 @@
 
 import { Serial } from './value-objects/serial.vo';
 import { Money } from './value-objects/money.vo';
-import { ProductStatus } from './value-objects/product-status.vo';
+import { ProductStatus } from './value-objects/productStatus.vo';
 
 export interface IProduct {
   id: string;

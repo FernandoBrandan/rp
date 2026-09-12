@@ -3,7 +3,7 @@ import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 
 import { Logger } from '@infra/logger/logger.interface';
 
-import { ProductRepository } from '../../domain/repositories/product.repository';
+import { ProductRepository } from '@catalog/domain/repositories/product.repository';
 import { LOGGER, PRODUCT_REPOSITORY } from '@infra/tokens';
 import { ProductMapper } from '../mappers/product.mapper';
 

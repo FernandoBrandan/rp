@@ -1,6 +1,6 @@
 // src/modules/02cart/infra/persistence/cart.orm.mapper.ts
 import { Cart } from '@cart/domain/cart.entity';
-import { CartItem } from '../../domain/value-objects/cart-item.vo';
+import { CartItem } from '@cart/domain/value-objects/cartItem.vo';
 import { CartOrmEntity } from './cart.orm-entity';
 
 export class CartMapper {

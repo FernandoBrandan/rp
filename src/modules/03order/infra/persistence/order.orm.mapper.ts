@@ -1,9 +1,9 @@
 // src/modules/03order/infra/persistence/order.orm.mapper.ts
 
-import { Order } from '../../domain/order.entity';
-import { Money } from '../../domain/value-objects/money.vo';
-import { OrderItem } from '../../domain/value-objects/orderItem.vo';
-import { OrderStatus } from '../../domain/value-objects/orderStatus.vo';
+import { Order } from '@order/domain/order.entity';
+import { Money } from '@order/domain/value-objects/money.vo';
+import { OrderItem } from '@order/domain/value-objects/orderItem.vo';
+import { OrderStatus } from '@order/domain/value-objects/orderStatus.vo';
 import { OrderEntity } from './order.orm-entity';
 
 export class OrderMapper {
@@ -12,6 +12,7 @@ export class OrderMapper {
       PENDING: OrderStatus.PENDING,
       PAID: OrderStatus.PAID,
       COMPLETED: OrderStatus.COMPLETED,
+      WAITING_PAYMENT: OrderStatus.WAITING_PAYMENT,
       FAILED: OrderStatus.FAILED,
       CANCELLED: OrderStatus.CANCELLED,
     };

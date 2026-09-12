@@ -1,9 +1,9 @@
 // modules/04 payments/infra/providers/fake-payment.provider.ts
 
 import { Inject, Injectable } from '@nestjs/common';
-import { PaymentProviderPort } from '../../application/ports/payment-provider.port';
+import { PaymentProviderPort } from '@payment/application/ports/payment-provider.port';
 import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
-import { OrderPaidEvent } from '@payment/domain/events/order-paid.event';
+import { EventNames, OrderPaidEvent } from '@common/events/';
 import { LOGGER } from '@infra/tokens';
 import { Logger } from '@infra/logger/logger.interface';
 
@@ -40,6 +40,9 @@ export class PaymentApprovedListener {
   constructor(private readonly eventEmitter: EventEmitter2) {}
   @OnEvent('payment.approved')
   handle(payload: { orderId: string }) {
-    this.eventEmitter.emit('order.paid', new OrderPaidEvent(payload.orderId));
+    this.eventEmitter.emit(
+      EventNames.ORDER_PAID,
+      new OrderPaidEvent(payload.orderId),
+    );
   }
 }

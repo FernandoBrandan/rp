@@ -3,8 +3,8 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { InfrastructureException } from '@common/exceptions/infrastructure.exception';
-import { Cart } from '../../domain/cart.entity';
-import { CartRepository } from '../../domain/repositories/cart.repository';
+import { Cart } from '@cart/domain/cart.entity';
+import { CartRepository } from '@cart/domain/repositories/cart.repository';
 import { CartOrmEntity } from '../persistence/cart.orm-entity';
 import { CartMapper } from '../persistence/cart.orm.mapper';
 

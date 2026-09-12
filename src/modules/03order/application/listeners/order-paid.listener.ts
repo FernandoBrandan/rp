@@ -3,9 +3,9 @@ import { OnEvent } from '@nestjs/event-emitter';
 import { EventNames } from '@common/events/event-names';
 import { Logger } from '@infra/logger/logger.interface';
 import { LOGGER, ORDER_REPOSITORY, STOCK_SERVICE } from '@infra/tokens';
-import { OrderRepository } from '../../domain/repositories/order.repository';
+import { OrderRepository } from '@order/domain/repositories/order.repository';
 import { StockPort } from '../ports/stock.port';
-import { OrderPaidEvent } from '../../domain/events/order-paid.event';
+import { OrderPaidEvent } from '@common/events/';
 
 @Injectable()
 export class OrderPaidListener {

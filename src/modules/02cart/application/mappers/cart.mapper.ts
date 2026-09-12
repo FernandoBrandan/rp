@@ -1,6 +1,6 @@
 // src/modules/02cart/application/mappers/cart.mapper.ts
 
-import { Cart } from '../../domain/cart.entity';
+import { Cart } from '@cart/domain/cart.entity';
 import { CartResponseDTO } from '../dto/response/cart.response.dto';
 
 export class CartMapper {

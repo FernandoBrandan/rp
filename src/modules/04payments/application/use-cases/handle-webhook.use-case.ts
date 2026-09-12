@@ -3,8 +3,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { EventNames } from '@common/events/event-names';
 import { Logger } from '@infra/logger/logger.interface';
 import { LOGGER } from '@infra/tokens';
-import { OrderPaidEvent } from '../../domain/events/order-paid.event';
-import { OrderPaymentFailedEvent } from '../../domain/events/order-payment-failed.event';
+import { OrderPaidEvent, OrderPaymentFailedEvent } from '@common/events/';
 
 @Injectable()
 export class HandleWebhookUseCase {

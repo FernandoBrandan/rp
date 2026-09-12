@@ -1,10 +1,14 @@
+// src/modules/03order/application/listeners/payment-link-created.listener.ts
 import { Injectable, Inject } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
-import { EventNames } from '@common/events/event-names';
+
 import { Logger } from '@infra/logger/logger.interface';
 import { LOGGER, ORDER_REPOSITORY } from '@infra/tokens';
-import { OrderRepository } from '../../domain/repositories/order.repository';
-import { PaymentLinkCreatedEvent } from '../../domain/events/payment-link-created.event';
+
+import { EventNames } from '@common/events/event-names';
+import { PaymentLinkCreatedEvent } from '@common/events/';
+
+import { OrderRepository } from '@order/domain/repositories/order.repository';
 
 @Injectable()
 export class PaymentLinkCreatedListener {
@@ -20,6 +24,7 @@ export class PaymentLinkCreatedListener {
     });
     const order = await this.orderRepository.getOrderDetail(event.orderId);
     if (!order) return;
+    if (order.paymentUrl) return;
     order.setPaymentUrl(event.paymentUrl);
     order.waiting_payment();
     await this.orderRepository.update(order);

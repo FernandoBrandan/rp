@@ -1,9 +1,9 @@
 // src/modules/01catalog/infra/persistence/product.orm.mapper.ts
 
-import { Product } from '../../domain/product.entity';
-import { Serial } from '../../domain/value-objects/serial.vo';
-import { Money } from '../../domain/value-objects/money.vo';
-import { ProductStatus } from '../../domain/value-objects/product-status.vo';
+import { Product } from '@catalog/domain/product.entity';
+import { Serial } from '@catalog/domain/value-objects/serial.vo';
+import { Money } from '@catalog/domain/value-objects/money.vo';
+import { ProductStatus } from '@catalog/domain/value-objects/productStatus.vo';
 import { ProductEntity } from './product.orm-entity';
 
 export class ProductOrmMapper {
@@ -25,7 +25,10 @@ export class ProductOrmMapper {
       name: domain.name,
       price: domain.price.getValue(),
       stock: domain.stock,
-      status: domain.status.getValue(),
+      status:
+        domain.status === 'ACTIVE'
+          ? ProductStatus.ACTIVE
+          : ProductStatus.INACTIVE,
     };
   }
 }

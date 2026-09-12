@@ -3,8 +3,8 @@ import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 
 import { Logger } from '@infra/logger/logger.interface';
 
-import { Money } from '../../domain/value-objects/money.vo';
-import { ProductRepository } from '../../domain/repositories/product.repository';
+import { Money } from '@catalog/domain/value-objects/money.vo';
+import { ProductRepository } from '@catalog/domain/repositories/product.repository';
 import { LOGGER, PRODUCT_REPOSITORY } from '@infra/tokens';
 import { UpdateProductDTO } from '../dto/request/update-product.request.dto';
 

@@ -1,15 +1,21 @@
+// src / modules /04payments / application / listeners / order - created.listener.ts
 import { Injectable, Inject } from '@nestjs/common';
 import { OnEvent, EventEmitter2 } from '@nestjs/event-emitter';
 import { EventNames } from '@common/events/event-names';
 import { Logger } from '@infra/logger/logger.interface';
 import { LOGGER, ORDER_FINDER } from '@infra/tokens';
+
 import { OrderFinderPort } from '@order/application/ports/order-finder.port';
 import { CreatePaymentLinkUseCase } from '../use-cases/create-payment-link.use-case';
-import { PaymentLinkCreatedEvent } from '../../domain/events/payment-link-created.event';
-import { OrderPaymentFailedEvent } from '../../domain/events/order-payment-failed.event';
+
+import {
+  PaymentLinkCreatedEvent,
+  OrderPaymentFailedEvent,
+} from '@common/events/';
 
 @Injectable()
 export class OrderCreatedListener {
+  s;
   constructor(
     private readonly eventEmitter: EventEmitter2,
     @Inject(ORDER_FINDER) private readonly orderFinder: OrderFinderPort,

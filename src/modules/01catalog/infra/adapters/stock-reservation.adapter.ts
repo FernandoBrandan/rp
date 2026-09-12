@@ -10,7 +10,7 @@ import { StockPort } from '@order/application/ports/stock.port';
 import { StockReservationEntity } from '../persistence/stock-reservation.orm-entity';
 
 @Injectable()
-export class StockValidateService implements StockPort {
+export class StockReservationAdapter implements StockPort {
   constructor(
     private readonly dataSource: DataSource,
     @InjectRepository(StockReservationEntity)
@@ -27,8 +27,12 @@ export class StockValidateService implements StockPort {
         const result = await manager
           .createQueryBuilder()
           .update('products')
-          .set({ stock: () => `stock - ${item.quantity}` })
-          .where('id = :id AND stock >= :qty', {
+          .set({
+            stock: () => 'stock - :qty',
+          })
+          .where('id = :id')
+          .andWhere('stock >= :qty')
+          .setParameters({
             id: item.productId,
             qty: item.quantity,
           })
@@ -37,6 +41,7 @@ export class StockValidateService implements StockPort {
           throw new Error(`Insufficient stock for product ${item.productId}`);
         }
       }
+
       const reservation = manager.create(StockReservationEntity, {
         orderId,
         items,

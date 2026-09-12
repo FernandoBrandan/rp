@@ -3,8 +3,8 @@ import { Inject, Injectable } from '@nestjs/common';
 
 import { Logger } from '@infra/logger/logger.interface';
 
-import { Cart } from '../../domain/cart.entity';
-import { CartRepository } from '../../domain/repositories/cart.repository';
+import { Cart } from '@cart/domain/cart.entity';
+import { CartRepository } from '@cart/domain/repositories/cart.repository';
 import { CartMapper } from '../mappers/cart.mapper';
 
 import { CART_REPOSITORY, LOGGER, PRODUCT_CHECKER } from '@infra/tokens';

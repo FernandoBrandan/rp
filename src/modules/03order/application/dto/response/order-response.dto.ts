@@ -1,31 +1,37 @@
 // src/modules/03order/application/dto/response/order-response.dto.ts
 
+import { ApiProperty } from '@nestjs/swagger';
+
 export class OrderItemResponseDTO {
+  @ApiProperty({ example: 'a1b2c3d4-...' })
   productId: string;
+
+  @ApiProperty({ example: 2 })
   quantity: number;
+
+  @ApiProperty({ example: 1500.99 })
   price: number;
 }
 
 export class OrderResponseDTO {
+  @ApiProperty({ example: 'ORDER-20260101-0001' })
   id: string;
-  userId: string;
-  status: string;
-  total: number;
-  items: OrderItemResponseDTO[];
-  paymentUrl?: string;
 
-  static fromDomain(order: any): OrderResponseDTO {
-    return {
-      id: order.id,
-      userId: order.userId,
-      status: order.status,
-      total: order.total.getValue(),
-      items: order.items.map((item: any) => ({
-        productId: item.productId,
-        quantity: item.quantity,
-        price: item.price.getValue(),
-      })),
-      paymentUrl: order.paymentUrl,
-    };
-  }
+  @ApiProperty({ example: 'user-123' })
+  userId: string;
+
+  @ApiProperty({
+    example: 'PENDING',
+    enum: ['PENDING', 'WAITING_PAYMENT', 'PAID', 'COMPLETED', 'FAILED'],
+  })
+  status: string;
+
+  @ApiProperty({ example: 3001.98 })
+  total: number;
+
+  @ApiProperty({ type: [OrderItemResponseDTO] })
+  items: OrderItemResponseDTO[];
+
+  @ApiProperty({ example: 'http://fake-payment/ORDER-...', required: false })
+  paymentUrl?: string;
 }

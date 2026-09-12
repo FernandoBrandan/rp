@@ -9,7 +9,7 @@ export class OrderEntity {
   @Column()
   userId: string;
 
-  @Column()
+  @Column({ type: 'varchar', unique: true })
   idempotencyKey: string;
 
   @Column('json')

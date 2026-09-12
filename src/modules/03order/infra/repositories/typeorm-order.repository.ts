@@ -3,8 +3,8 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { InfrastructureException } from '@common/exceptions/infrastructure.exception';
-import { Order } from '../../domain/order.entity';
-import { OrderRepository } from '../../domain/repositories/order.repository';
+import { Order } from '@order/domain/order.entity';
+import { OrderRepository } from '@order/domain/repositories/order.repository';
 import { OrderEntity } from '../persistence/order.orm-entity';
 import { OrderMapper } from '../persistence/order.orm.mapper';
 

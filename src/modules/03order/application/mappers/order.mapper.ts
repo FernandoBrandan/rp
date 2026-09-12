@@ -1,5 +1,5 @@
 // src/modules/03order/application/mappers/order.mapper.ts
-import { Order } from '../../domain/order.entity';
+import { Order } from '@order/domain/order.entity';
 import { OrderResponseDTO } from '../dto/response/order-response.dto';
 
 export class OrderMapper {

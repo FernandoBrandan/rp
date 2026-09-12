@@ -1,11 +1,12 @@
+//src/modules/03order/application/listeners/order-payment-failed.listener.ts
 import { Injectable, Inject } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { EventNames } from '@common/events/event-names';
 import { Logger } from '@infra/logger/logger.interface';
 import { LOGGER, ORDER_REPOSITORY, STOCK_SERVICE } from '@infra/tokens';
-import { OrderRepository } from '../../domain/repositories/order.repository';
+import { OrderRepository } from '@order/domain/repositories/order.repository';
 import { StockPort } from '../ports/stock.port';
-import { OrderPaymentFailedEvent } from '../../domain/events/order-payment-failed.event';
+import { OrderPaymentFailedEvent } from '@common/events/';
 
 @Injectable()
 export class OrderPaymentFailedListener {

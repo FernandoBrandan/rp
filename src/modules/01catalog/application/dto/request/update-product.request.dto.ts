@@ -1,6 +1,6 @@
 // src/modules/01catalog/application/dto/request/update-product.request.dto.ts
 import { IsString, IsNumber, Min, IsEnum, IsOptional } from 'class-validator';
-import { ProductStatus } from '../../../domain/value-objects/product-status.vo';
+import { ProductStatus } from '@catalog/domain/value-objects/productStatus.vo';
 
 export class UpdateProductDTO {
   @IsString()

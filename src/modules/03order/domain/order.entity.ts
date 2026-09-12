@@ -2,6 +2,7 @@
 import { OrderItem } from './value-objects/orderItem.vo';
 import { Money } from './value-objects/money.vo';
 import { OrderStatus } from './value-objects/orderStatus.vo';
+import { PaymentStatus } from './value-objects/paymentStatus.vo';
 
 interface IOrder {
   id: string;
@@ -20,6 +21,7 @@ export class Order implements IOrder {
     public readonly total: Money,
     public status: OrderStatus = OrderStatus.PENDING,
     public reservationId: string,
+    // public paymentStatus: PaymentStatus = PaymentStatus.PENDING,
     public paymentUrl?: string,
   ) {}
 
@@ -40,6 +42,7 @@ export class Order implements IOrder {
       total,
       OrderStatus.PENDING,
       props.reservationId,
+      // PaymentStatus.PENDING,
     );
   }
 
@@ -54,8 +57,11 @@ export class Order implements IOrder {
   }
 
   fail() {
-    if (this.status !== OrderStatus.PENDING)
-      throw new Error('Only pending orders can fail');
+    if (
+      this.status !== OrderStatus.PENDING &&
+      this.status !== OrderStatus.WAITING_PAYMENT
+    )
+      throw new Error('Only pending or waiting payment orders can fail');
     this.status = OrderStatus.FAILED;
   }
 

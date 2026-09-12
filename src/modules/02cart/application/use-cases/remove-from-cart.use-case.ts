@@ -3,7 +3,7 @@ import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 
 import { Logger } from '@infra/logger/logger.interface';
 
-import { CartRepository } from '../../domain/repositories/cart.repository';
+import { CartRepository } from '@cart/domain/repositories/cart.repository';
 import { CartMapper } from '../mappers/cart.mapper';
 
 import { CART_REPOSITORY, LOGGER } from '@infra/tokens';

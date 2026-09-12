@@ -8,9 +8,9 @@ import {
 
 import { Logger } from '@infra/logger/logger.interface';
 
-import { Cart } from '../../domain/cart.entity';
-import { CartItem } from '../../domain/value-objects/cart-item.vo';
-import { CartRepository } from '../../domain/repositories/cart.repository';
+import { Cart } from '@cart/domain/cart.entity';
+import { CartItem } from '@cart/domain/value-objects/cartItem.vo';
+import { CartRepository } from '@cart/domain/repositories/cart.repository';
 import { ProductCheckerPort } from '../ports/product-checker.port';
 import { AddToCartDTO } from '../dto/request/add-to-cart.request.dto';
 import { CartMapper } from '../mappers/cart.mapper';

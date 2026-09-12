@@ -1,6 +1,6 @@
 // src/modules/02cart/domain/cart.entity.ts
 
-import { CartItem } from './value-objects/cart-item.vo';
+import { CartItem } from './value-objects/cartItem.vo';
 
 export interface ICart {
   userId: string;

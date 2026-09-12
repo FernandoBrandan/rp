@@ -13,6 +13,7 @@ import { CreateOrderDTO } from '../application/dto/request/create-order.dto';
 import { OrderResponseDTO } from '../application/dto/response/order-response.dto';
 import { OrderRepository } from '../domain/repositories/order.repository';
 import { ORDER_REPOSITORY } from '@infra/tokens';
+import { OrderMapper } from '../application/mappers/order.mapper';
 
 @Controller('orders')
 export class OrderController {
@@ -33,14 +34,14 @@ export class OrderController {
     if (!order) {
       throw new NotFoundException(`Order with id ${id} not found`);
     }
-    return OrderResponseDTO.fromDomain(order);
+    return OrderMapper.toResponse(order);
   }
 
-  @Get()
+  @Get('user/:userId')
   async findByUser(
     @Param('userId') userId: string,
   ): Promise<OrderResponseDTO[]> {
     const orders = await this.orderRepository.getOrdersByUser(userId);
-    return orders.map(OrderResponseDTO.fromDomain);
+    return orders.map(OrderMapper.toResponse);
   }
 }

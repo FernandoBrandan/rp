@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { BullModule } from '@nestjs/bull';
 import { LoggerModule } from '@infra/logger/logger.module';
 import { PAYMENT_PROVIDER } from '@infra/tokens';
 import { OrderModule } from '@order/order.module';
@@ -17,7 +18,11 @@ import { FakePaymentProvider } from './infra/providers/fake-payment.provider';
 const providerPayment = FakePaymentProvider;
 
 @Module({
-  imports: [LoggerModule, OrderModule],
+  imports: [
+    BullModule.registerQueue({ name: 'payment-link' }),
+    LoggerModule,
+    OrderModule,
+  ],
   controllers: [PaymentsController],
   providers: [
     OrderCreatedListener,

@@ -1,7 +1,7 @@
 // modules/04 payments/infra/providers/MercadoPago.provider.ts
 
 import { Inject, Injectable } from '@nestjs/common';
-import { PaymentProviderPort } from '../../application/ports/payment-provider.port';
+import { PaymentProviderPort } from '@payment/application/ports/payment-provider.port';
 import { Logger } from '@infra/logger/logger.interface';
 import { LOGGER } from '@infra/tokens';
 
