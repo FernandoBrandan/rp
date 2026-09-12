@@ -1,0 +1,63 @@
+
+[fernando@thinkpad .scripts]$ ./smoke-test.sh
+
+━━━ Pre-checks ━━━
+BASE_URL=http://localhost:3000
+✔ jq disponible
+✔ Health check (=ok)
+
+━━━ 1. Crear producto ━━━
+✔ POST /products devuelve 201 (=201)
+✔ Serial respetado (=PROD-TEST1789194141)
+✔ Stock inicial (=10)
+✔ Status inicial (=ACTIVE)
+PRODUCT_ID=2f6a5c4b-f75a-483e-8254-781a12c85ce9
+
+━━━ 2. Validación: serial inválido ━━━
+✔ POST /products con serial inválido → 400 (=400)
+
+━━━ 3. Carrito ━━━
+USER_ID=9a577d24-444c-4923-82ce-87d4ab33d240
+✔ POST /cart/:userId → 201 (=201)
+✔ Items en carrito (=1)
+✔ Total items (=2)
+✔ GET /cart/:userId devuelve precio (=1500)
+✔ Subtotal correcto (=3000)
+
+━━━ 4. Crear orden ━━━
+✔ POST /orders → 201 (=201)
+✔ Total de la orden (=3000)
+✔ Status inicial de la orden (=PENDING)
+ORDER_ID=ORDER-20260912-0019
+
+━━━ 5. Idempotencia ━━━
+✔ POST /orders con mismo key → 201 (=201)
+✔ Devuelve el mismo ORDER_ID (=ORDER-20260912-0019)
+
+━━━ 6. Estado final de la orden ━━━
+✔ Status final (=PAID)
+✔ paymentUrl seteado (http://fake-payment.local/pay/ORDER-20260912-0019)
+
+━━━ 7. Stock descontado ━━━
+✔ Stock post-orden (10 - 2) (=8)
+
+━━━ 8. Idempotencia bajo concurrencia ━━━
+✔ Solo 1 ORDER_ID único entre 3 requests (=1)
+IDs devueltos: ORDER-20260912-0020 ORDER-20260912-0020 ORDER-20260912-0020
+
+━━━ 9. Stock insuficiente ━━━
+✔ POST /orders sin stock → 4xx (=400)
+
+━━━ 10. Producto inactivo ━━━
+✔ PUT /products → INACTIVE (=200)
+✔ POST /orders con producto inactivo → 400 (=400)
+
+━━━ 11. Cart rechaza producto inactivo ━━━
+✔ POST /cart con producto inactivo → 400 (=400)
+
+━━━ 12. Orden inexistente ━━━
+✔ GET /orders/:id inexistente → 404 (=404)
+
+━━━ Resumen ━━━
+✔ 26/26 passed
+[fernando@thinkpad .scripts]$

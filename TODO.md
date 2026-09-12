@@ -28,18 +28,9 @@
     - En `payment.module.ts` ya tenés el switch por `PAYMENT_PROVIDER`, solo tenés que setear la env
     - Manejo de errores: mapear a `InfrastructureException`
 
-15. **Decidir sobre Bull** — y si vas, hacerlo bien
-    - Hoy: sin processor, sin uso, solo el `registerQueue` muerto
-    - Cuándo sí:
-      - El link de pago tiene que generarse aunque el proceso muera entre el POST y la respuesta del provider
-      - Necesitás retries con backoff ante fallos del provider
-      - Vas a correr múltiples instancias y querés un solo worker por job
-    - Si vas: `jobId: payment-link:${orderId}` para dedupe (Bull sin `jobId` **genera duplicados**, mismo bug que estás tratando de evitar)
-
 ---
 
 # ⚫ Backlog
 
 - Tests e2e — happy path, fallo del provider, concurrencia por idempotencyKey.
-- Money duplicado — mover a common/domain/ cuando toques ambos módulos.
 - InventorySubscriber — solo si stock crece.
