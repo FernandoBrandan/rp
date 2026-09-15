@@ -5,6 +5,7 @@ import {
   Injectable,
 } from '@nestjs/common';
 
+import { randomUUID } from 'crypto';
 import { Logger } from '@infra/logger/logger.interface';
 
 import { Product } from '@catalog/domain/product.entity';
@@ -43,7 +44,7 @@ export class CreateProductUseCase {
     }
 
     const product = new Product(
-      crypto.randomUUID(),
+      randomUUID(),
       serial,
       dto.name,
       new Money(dto.price),

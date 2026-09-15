@@ -11,7 +11,7 @@ export type ReservationStatus = 'RESERVED' | 'CONFIRMED' | 'RELEASED';
 
 @Entity('stock_reservations')
 export class StockReservationEntity {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @Column({ type: 'varchar' })

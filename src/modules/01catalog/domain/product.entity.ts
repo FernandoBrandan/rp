@@ -42,6 +42,16 @@ export class Product implements IProduct {
     this.stock = stock;
   }
 
+  isActive(): boolean {
+    return this.status === ProductStatus.ACTIVE;
+  }
+
+  ensureIsActive(): void {
+    if (!this.isActive()) {
+      throw new Error(`Product ${this.id} is not active for operations`);
+    }
+  }
+
   activate() {
     this.status = ProductStatus.ACTIVE;
   }

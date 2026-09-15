@@ -60,12 +60,19 @@ export class Order implements IOrder {
   }
 
   pay() {
+    if (
+      this.status !== OrderStatus.PENDING &&
+      this.status !== OrderStatus.WAITING_PAYMENT
+    ) {
+      throw new Error('Only pending or waiting payment orders can be paid');
+    }
     this.status = OrderStatus.PAID;
+    this.paymentStatus = PaymentStatus.READY;
   }
 
   waiting_payment() {
     if (this.status !== OrderStatus.PENDING)
-      throw new Error('Only pending orders can fail');
+      throw new Error('Only pending orders can move to waiting payment');
     this.status = OrderStatus.WAITING_PAYMENT;
   }
 

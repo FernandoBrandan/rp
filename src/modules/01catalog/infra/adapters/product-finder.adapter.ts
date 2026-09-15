@@ -19,12 +19,14 @@ export class ProductFinderAdapter implements ProductFinderPort {
 
   async findByIds(productIds: string[]): Promise<ProductSnapshot[]> {
     const products = await this.productRepository.findByIds(productIds);
-    return products.map((p) => ({
-      id: p.id,
-      name: p.name,
-      price: p.price.getValue(),
-      stock: p.stock,
-      status: p.status,
-    }));
+    return products
+      .filter((p) => p.isActive()) // Usamos el método de la entidad Product
+      .map((p) => ({
+        id: p.id,
+        name: p.name,
+        price: p.price.getValue(),
+        stock: p.stock,
+        status: p.status,
+      }));
   }
 }

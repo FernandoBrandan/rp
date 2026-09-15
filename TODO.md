@@ -1,3 +1,11 @@
+# Ver
+
+- Falta ProductsController que use PRODUCT_FINDER directo (solo se usa vía puerto de Order).
+
+- Los @OnEvent no son transaccionales:
+- - si OrderPaidListener falla a medias (pay() ok, confirmReservation() falla) queda inconsistente.
+- - Considera outbox pattern.
+
 ### 🟡 Suscriptores de eventos (los de tu nota)
 
 11. **`CartSubscriber`** (más simple, mejor punto de entrada)
