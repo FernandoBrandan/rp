@@ -97,16 +97,39 @@ case "$cmd" in
     ;;
 
   sh)
-    case "${1:-app}" in
-      app)      docker exec -it ecommerce_app sh ;;
-      postgres) docker exec -it ecommerce_postgres sh ;;
-      redis)    docker exec -it ecommerce_redis sh ;;
-      *)        echo "${R}Servicio desconocido: ${1:-} (app|postgres|redis)${N}"; exit 1 ;;
+    svc="${1:-app}"
+    stack="$(which_stack)"
+    case "$stack" in
+      prod)
+        case "$svc" in
+          app)      docker exec -it ecommerce_app sh ;;
+          postgres) $COMPOSE_PROD exec postgres sh ;;
+          redis)    $COMPOSE_PROD exec redis sh ;;
+          *) echo "${R}Servicio desconocido: $svc${N}"; exit 1 ;;
+        esac
+        ;;
+      dev)
+        case "$svc" in
+          app)      echo "${Y}El servicio 'app' solo existe en prod.${N}"; exit 1 ;;
+          postgres) docker exec -it ecommerce_postgres sh ;;
+          redis)    docker exec -it ecommerce_redis sh ;;
+          *) echo "${R}Servicio desconocido: $svc${N}"; exit 1 ;;
+        esac
+        ;;
+      *)
+        echo "${Y}Ningún stack arriba.${N}"
+        exit 1
+        ;;
     esac
     ;;
 
   db)
-    docker exec -it ecommerce_postgres psql -U postgres -d ecommerce
+    stack="$(which_stack)"
+    case "$stack" in
+      prod) $COMPOSE_PROD exec postgres psql -U postgres -d ecommerce ;;
+      dev)  docker exec -it ecommerce_postgres psql -U postgres -d ecommerce ;;
+      *)    echo "${Y}Ningún stack arriba.${N}"; exit 1 ;;
+    esac
     ;;
 
   migrate) NODE_ENV=dev npm run migration:run:dev ;;
