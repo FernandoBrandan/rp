@@ -4,27 +4,38 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 @Module({
-  imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+  imports: [ 
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
 
-      useFactory: (config: ConfigService) => {
-        const isProduction = config.get<string>('NODE_ENV') === 'production';
+      useFactory: (config: ConfigService) => { 
+        const nodeEnv = config.get<string>('NODE_ENV');
+        const isProduction = nodeEnv === 'prod';
         return {
           type: 'postgres',
-          host: config.get<string>('DB_HOST', 'localhost'),
-          port: config.get<number>('DB_PORT', 5432),
-
-          username: config.get<string>('DB_USER', 'postgres'),
-          password: config.get<string>('DB_PASS', 'postgres'),
-          database: config.get<string>('DB_NAME', 'ecommerce'),
+          host: config.get<string>('DB_HOST'),
+          port: config.get<number>('DB_PORT'),
+          username: config.get<string>('DB_USER'),
+          password: config.get<string>('DB_PASS'),
+          database: config.get<string>('DB_NAME'),
 
           autoLoadEntities: true,
-          synchronize: !isProduction,
-          logging: !isProduction,
 
+          synchronize: !isProduction,
+          
+          migrations: ['dist/infra/database/migrations/*.js'],
+          migrationsRun: isProduction,
+          migrationsTableName: 'migrations',
+
+          logging: config.get<string>('DB_LOGGING') === 'true',
+
+          extra: {
+            max: 20,
+            idleTimeoutMillis: 30_000,
+            connectionTimeoutMillis: 5_000,
+          },
+          
           retryAttempts: 5,
           retryDelay: 3000,
         };

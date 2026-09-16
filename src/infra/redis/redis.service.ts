@@ -1,11 +1,18 @@
 // src/infra/redis/redis.service.ts
-import { REDIS_CLIENT } from '@infra/tokens';
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable,OnModuleDestroy } from '@nestjs/common';
 import Redis from 'ioredis';
+import { REDIS_CLIENT } from '@infra/tokens';
 
 @Injectable()
-export class RedisService {
-  constructor(@Inject(REDIS_CLIENT) private readonly redis: Redis) {}
+export class RedisService implements OnModuleDestroy {
+  constructor(
+    @Inject(REDIS_CLIENT)
+    private readonly redis: Redis
+  ) { }
+  
+  async onModuleDestroy() {
+        await this.redis.quit();
+  }
 
   async get(key: string): Promise<string | null> {
     return this.redis.get(key);

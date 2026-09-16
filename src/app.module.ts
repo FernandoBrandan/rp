@@ -15,7 +15,7 @@ import { PaymentModule } from '@payment/payment.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule,
     DatabaseModule,
     EventEmitterModule.forRoot(),
     HealthModule,

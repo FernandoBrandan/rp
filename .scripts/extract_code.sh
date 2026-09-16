@@ -10,7 +10,7 @@
 set -e
 
 # --- Configuración -------------------------------------------------
-SRC_DIR_NAME="src"
+SRC_DIR_NAME=".docs"
 STRUCTURE_FILE="_structure.txt"
 FULLCODE_FILE="_fullCode.txt"
 SEPARATOR="________"

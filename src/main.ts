@@ -10,8 +10,9 @@ import { InfrastructureExceptionFilter } from '@common/filters/infrastructure-ex
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-
+  
   // Config
+  app.enableShutdownHooks();
   app.use(correlationIdMiddleware);
   app.useGlobalFilters(new AllExceptionsFilter(new AppLogger()));
   app.useGlobalFilters(new InfrastructureExceptionFilter());
