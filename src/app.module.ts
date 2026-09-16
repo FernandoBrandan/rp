@@ -1,9 +1,9 @@
 // src/app.module.ts
 
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 
+import { ConfigModule } from '@infra/config/config.module';
 import { DatabaseModule } from '@infra/database/database.module';
 import { HealthModule } from '@infra/health/health.module';
 import { LoggerModule } from '@infra/logger/logger.module';

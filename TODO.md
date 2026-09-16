@@ -1,3 +1,26 @@
+# Checklist de verificación
+
+Después de aplicar todo:
+
+    □    npm run start:dev arranca sin errores → usa .env.dev
+    □    Si borrás DB_HOST de .env.dev, el boot falla con mensaje claro de Joi
+    □    docker compose up -d levanta Postgres + Redis con healthchecks verdes
+    □    npm run migration:generate crea la migration inicial
+    □    npm run migration:run la aplica
+    □    docker compose -f docker-compose.prod.yml up --build levanta todo
+    □    curl localhost:3000/health responde OK desde el container
+    □    docker stop ecommerce_app cierra limpio (no corta conexiones)
+    □    .env y .env.prod no están en git (git status limpio)
+
+Orden de ejecución recomendado
+
+- Env validation + .env.example + .env.dev (30 min) — es lo que desbloquea todo
+- Data source + scripts de migration (30 min)
+- Generar primera migration (15 min)
+- Dockerfile + docker-compose.yml dev (30 min)
+- docker-compose.prod.yml (15 min)
+- Graceful shutdown (10 min)
+
 # Ver
 
 - Los @OnEvent no son transaccionales:
@@ -439,10 +462,7 @@ export class HealthController {
     ]);
 
     const allOk = checks.every((c) => c.status === 'fulfilled');
-    if (!allOk)
-      throw new ServiceUnavailableException({
-        /* detalles */
-      });
+    if (!allOk) throw new ServiceUnavailableException({/* detalles */});
 
     return {
       status: 'ok',

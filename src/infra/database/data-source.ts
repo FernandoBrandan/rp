@@ -3,8 +3,8 @@ import { DataSource } from 'typeorm';
 import * as dotenv from 'dotenv';
 
 const env = process.env.NODE_ENV || 'dev';
-dotenv.config({ path: `.env.${env}` });
-dotenv.config({ path: '.env' });
+const envFile = env === 'dev' ? '.env.dev' : '.env.docker';
+dotenv.config({ path: envFile });
 
 export default new DataSource({
   type: 'postgres',

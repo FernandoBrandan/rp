@@ -1,15 +1,17 @@
 // src/infra/redis/redis.module.ts
 import { Module, Global } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
 import { REDIS_CLIENT } from '../tokens';
 import { RedisService } from './redis.service';
 
 @Global()
 @Module({
+  imports: [ConfigModule],
   providers: [
     {
       provide: REDIS_CLIENT,
+      inject: [ConfigService],
       useFactory: (config: ConfigService) => {
         const client = new Redis({
           host: config.get<string>('REDIS_HOST', 'localhost'),
