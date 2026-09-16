@@ -9,7 +9,7 @@
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
-    "start:dev": "NODE_ENV=dev start --watch",
+    "start:dev": "NODE_ENV=dev nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "NODE_ENV=prod node dist/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
@@ -25,10 +25,8 @@
     "migration:run:prod": "NODE_ENV=prod npm run migration:run",
     "migration:revert": "npm run typeorm -- migration:revert",
     "migration:show": "npm run typeorm -- migration:show",
-    "notas": "falta archivo migraciones, se migran siempre cuando se levanta la app?? ",
-    "notas2": " que hago con la carpeta .env ??  ",
-    "notas3": " secuencia entre probar dev y prod",
-    "notas4": "pensaba poner un .sh que levante un .sql : ejemplo https://github.com/PabloGarciaJC/sistema-de-inventario-python-django/tree/master/.docker"
+    "seed:dev": "NODE_ENV=dev ts-node -r tsconfig-paths/register src/scripts/seed.ts",
+    "seed:prod": "NODE_ENV=prod node dist/scripts/seed.js"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.19",
