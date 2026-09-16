@@ -3,7 +3,7 @@ import { AsyncLocalStorage } from 'async_hooks';
 import { createLogger, format, transports } from 'winston';
 import { Logger } from './logger.interface';
 
-const { combine, timestamp, printf, errors } = format;
+const { combine, timestamp, errors, json } = format;
 
 export interface CorrelationContext {
   correlationId: string;
@@ -11,23 +11,12 @@ export interface CorrelationContext {
 
 export const correlationStorage = new AsyncLocalStorage<CorrelationContext>();
 
-const logFormat = printf(
-  ({ level, message, timestamp, stack, correlationId, ...meta }) => {
-    const cid = correlationId || 'NO-CID';
-    const metaStr = Object.keys(meta).length ? ` ${JSON.stringify(meta)}` : '';
-    return stack
-      ? `[${timestamp}] [${cid}] ${level.toUpperCase()}: ${stack}`
-      : `[${timestamp}] [${cid}] ${level.toUpperCase()}: ${message}${metaStr}`;
-  },
-);
+const SERVICE_NAME = process.env.SERVICE_NAME || 'ecommerce-api';
 
 const rootLogger = createLogger({
   level: process.env.LOG_LEVEL || 'info',
-  format: combine(
-    timestamp({ format: 'YYYY-MM-DD HH:mm:ss.SSS' }),
-    errors({ stack: true }),
-    logFormat,
-  ),
+  defaultMeta: { service: SERVICE_NAME },
+  format: combine(timestamp(), errors({ stack: true }), json()),
   transports: [new transports.Console()],
 });
 
@@ -36,7 +25,7 @@ export class AppLogger implements Logger {
   private withContext(meta: Record<string, any> = {}) {
     const correlationId =
       correlationStorage.getStore()?.correlationId ?? 'APP-START';
-    return { ...meta, correlationId };
+    return { correlationId, ...meta };
   }
 
   info(message: string, meta: Record<string, any> = {}) {

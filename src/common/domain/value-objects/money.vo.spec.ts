@@ -1,5 +1,10 @@
 import { Money } from './money.vo';
 
+// npm ci
+// npm run lint
+// npm run build
+// npm test
+
 describe('Money', () => {
   describe('constructor', () => {
     it('acepta montos positivos', () => {

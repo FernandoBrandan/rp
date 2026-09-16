@@ -106,9 +106,13 @@ if ! command -v jq >/dev/null 2>&1; then
 fi
 ok "jq disponible"
 
-HEALTH=$(http_get /health)
+HEALTH=$(http_get /health/live)
 HEALTH_STATUS=$(json "$HEALTH" '.status')
-assert_eq "Health check" "ok" "$HEALTH_STATUS"
+assert_eq "Health live" "ok" "$HEALTH_STATUS"
+
+HEALTH=$(http_get /health/ready)
+HEALTH_STATUS=$(json "$HEALTH" '.status')
+assert_eq "Health ready" "ok" "$HEALTH_STATUS"
 
 # ─── 1. Crear producto ───────────────────────────────────────────────────────
 section "1. Crear producto"

@@ -1,11 +1,10 @@
-import { Controller, Get, HttpStatus, Res } from '@nestjs/common';
+import { Controller, Get, ServiceUnavailableException } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
   ApiOkResponse,
   ApiServiceUnavailableResponse,
 } from '@nestjs/swagger';
-import { Response } from 'express';
 import { HealthService } from './health.service';
 
 @ApiTags('health')
@@ -13,32 +12,65 @@ import { HealthService } from './health.service';
 export class HealthController {
   constructor(private readonly healthService: HealthService) {}
 
-  @Get()
-  @ApiOperation({ summary: 'Estado del servicio y conexión a base de datos' })
-  @ApiOkResponse({ description: 'Servicio operativo' })
-  @ApiServiceUnavailableResponse({ description: 'Base de datos desconectada' })
-  async check(@Res() res: Response) {
-    const uptime = process.uptime();
-    const timestamp = new Date().toISOString();
+  @Get('live')
+  @ApiOperation({
+    summary: 'Liveness — ¿el proceso está vivo?',
+    description:
+      'No chequea dependencias. Devuelve 200 si el proceso responde.',
+  })
+  @ApiOkResponse({ description: 'Proceso vivo' })
+  live() {
+    return {
+      status: 'ok',
+      uptime: Math.floor(process.uptime()),
+      timestamp: new Date().toISOString(),
+    };
+  }
 
-    try {
-      await this.healthService.checkDatabase();
-      return res.status(HttpStatus.OK).json({
-        status: 'ok',
-        message: 'La aplicación está funcionando correctamente',
-        database: 'connected',
-        uptime: `${Math.floor(uptime)} segundos`,
-        timestamp,
-      });
-    } catch (error) {
-      return res.status(error.getStatus()).json({
+  @Get('ready')
+  @ApiOperation({
+    summary: 'Readiness — ¿puede atender tráfico?',
+    description: 'Chequea DB y Redis. Devuelve 503 si alguno está caído.',
+  })
+  @ApiOkResponse({ description: 'Todos los componentes operativos' })
+  @ApiServiceUnavailableResponse({
+    description: 'Al menos un componente caído',
+  })
+  async ready() {
+    const checks: Record<
+      string,
+      { status: 'up' } | { status: 'down'; error: string }
+    > = {};
+
+    const results = await Promise.allSettled([
+      this.healthService.checkDatabase(),
+      this.healthService.checkRedis(),
+    ]);
+
+    checks.database =
+      results[0].status === 'fulfilled'
+        ? results[0].value
+        : { status: 'down', error: (results[0].reason as Error).message };
+
+    checks.redis =
+      results[1].status === 'fulfilled'
+        ? results[1].value
+        : { status: 'down', error: (results[1].reason as Error).message };
+
+    const allUp = results.every((r) => r.status === 'fulfilled');
+
+    if (!allUp) {
+      throw new ServiceUnavailableException({
         status: 'error',
-        message: error.message,
-        database: 'disconnected',
-        uptime: `${Math.floor(uptime)} segundos`,
-        timestamp,
-        details: error.response?.details || null,
+        checks,
+        timestamp: new Date().toISOString(),
       });
     }
+
+    return {
+      status: allUp ? 'ok' : 'error',
+      checks,
+      timestamp: new Date().toISOString(),
+    };
   }
 }

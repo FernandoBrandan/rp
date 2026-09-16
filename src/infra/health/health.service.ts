@@ -1,34 +1,44 @@
-// src/infra/health/health.service.ts
-import {
-  Inject,
-  Injectable,
-  ServiceUnavailableException,
-} from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { Logger } from '@infra/logger/logger.interface';
 import { LOGGER } from '@infra/tokens';
+import { RedisService } from '@infra/redis/redis.service';
 
 @Injectable()
 export class HealthService {
   constructor(
-    private dataSource: DataSource,
+    private readonly dataSource: DataSource,
+    private readonly redis: RedisService,
 
     @Inject(LOGGER)
-    private logger: Logger,
+    private readonly logger: Logger,
   ) {}
 
-  async checkDatabase(): Promise<boolean> {
+  async checkDatabase(): Promise<{ status: 'up' }> {
     try {
       await this.dataSource.query('SELECT 1');
-      return true;
+      return { status: 'up' };
     } catch (error) {
-      this.logger.error('Database connection failed', error);
-      throw new ServiceUnavailableException({
-        status: 'error',
-        message: 'Database connection failed',
-        database: 'disconnected',
-        details: error.message,
+      this.logger.error('Database health check failed', {
+        event: 'health_check_failed',
+        component: 'database',
+        error: error instanceof Error ? error.message : String(error),
       });
+      throw new Error('Database is down');
+    }
+  }
+
+  async checkRedis(): Promise<{ status: 'up' }> {
+    try {
+      await this.redis.get('__health__');
+      return { status: 'up' };
+    } catch (error) {
+      this.logger.error('Redis health check failed', {
+        event: 'health_check_failed',
+        component: 'redis',
+        error: error instanceof Error ? error.message : String(error),
+      });
+      throw new Error('Redis is down');
     }
   }
 }
