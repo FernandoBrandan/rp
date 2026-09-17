@@ -24,7 +24,7 @@ export class HealthService {
         component: 'database',
         error: error instanceof Error ? error.message : String(error),
       });
-      throw new Error('Database is down');
+      throw withCause('Database is down', error);
     }
   }
 
@@ -38,7 +38,13 @@ export class HealthService {
         component: 'redis',
         error: error instanceof Error ? error.message : String(error),
       });
-      throw new Error('Redis is down');
+      throw withCause('Redis is down', error);
     }
   }
+}
+
+function withCause(message: string, cause: unknown): Error {
+  const err = new Error(message);
+  (err as Error & { cause?: unknown }).cause = cause;
+  return err;
 }

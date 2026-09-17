@@ -4,6 +4,7 @@ import tseslint from 'typescript-eslint';
 import globals from 'globals';
 
 export default tseslint.config(
+  // 1. Ignorados globales
   {
     ignores: [
       'eslint.config.mjs',
@@ -13,9 +14,11 @@ export default tseslint.config(
     ],
   },
 
+  // 2. Configuraciones base
   eslint.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
 
+  // 3. Entorno (Node + Jest)
   {
     languageOptions: {
       globals: {
@@ -30,28 +33,69 @@ export default tseslint.config(
     },
   },
 
+  // 4. Reglas personalizadas
   {
     rules: {
-      // Reglas muy ruidosas para un proyecto ya existente: las apagamos.
-      '@typescript-eslint/no-explicit-any': 'off',
-      '@typescript-eslint/no-unsafe-assignment': 'off',
-      '@typescript-eslint/no-unsafe-call': 'off',
-      '@typescript-eslint/no-unsafe-member-access': 'off',
-      '@typescript-eslint/no-unsafe-return': 'off',
-      '@typescript-eslint/no-unsafe-argument': 'warn',
-      '@typescript-eslint/unbound-method': 'off',
-      '@typescript-eslint/require-await': 'off',
-      '@typescript-eslint/no-require-imports': 'off',
+      // ---------------------------------------------------------------
+      // ✅ REGLAS QUE MANTENEMOS ACTIVAS (aportan valor real)
+      // ---------------------------------------------------------------
 
-      // Estas sí las dejamos activas pero como warning:
-      '@typescript-eslint/no-floating-promises': 'warn',
+      // Evita promesas sin manejar (bug clásico en NestJS)
+      '@typescript-eslint/no-floating-promises': 'error',
+
+      // Evita usar promesas en contextos donde no toca (if, &&, etc.)
+      '@typescript-eslint/no-misused-promises': 'error',
+
+      // Obliga a usar `cause` al re-lanzar errores (mejora el debugging)
+      'preserve-caught-error': 'error',
+
+      // Detecta variables, imports y parámetros sin usar
+      // (con opción de ignorar los que empiezan con `_`)
       '@typescript-eslint/no-unused-vars': [
         'error',
-        { argsIgnorePattern: '^_' },
+        {
+          args: 'all',
+          argsIgnorePattern: '^_',
+          caughtErrors: 'all',
+          caughtErrorsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          ignoreRestSiblings: true,
+        },
       ],
 
-      // Regla nueva de ESLint core (v9+), apagada por ahora
-      'preserve-caught-error': 'off',
+      // Evita usar `async` sin `await` (código más limpio)
+      '@typescript-eslint/require-await': 'error',
+
+      // Detecta métodos pasados sin bind (típico bug en callbacks)
+      '@typescript-eslint/unbound-method': 'error',
+
+      // Preferir `unknown` sobre `any` cuando no se sabe el tipo
+      '@typescript-eslint/no-explicit-any': 'warn',
+
+      // ---------------------------------------------------------------
+      // ⚠️ REGLAS RELAJADAS A WARN (útiles pero ruidosas en código legado)
+      // ---------------------------------------------------------------
+
+      // Detectan uso de `any` en posiciones peligrosas.
+      // Las dejamos como warning para que sirvan de guía sin bloquear.
+      '@typescript-eslint/no-unsafe-assignment': 'warn',
+      '@typescript-eslint/no-unsafe-call': 'warn',
+      '@typescript-eslint/no-unsafe-member-access': 'warn',
+      '@typescript-eslint/no-unsafe-return': 'warn',
+      '@typescript-eslint/no-unsafe-argument': 'warn',
+
+      // ---------------------------------------------------------------
+      // 🚫 REGLAS APAGADAS (ruido sin valor real en este contexto)
+      // ---------------------------------------------------------------
+
+      // Esta regla es muy agresiva y entra en conflicto con patrones
+      // comunes de Jest (expect(repo.save).toHaveBeenCalled())
+      // y con el estilo de NestJS. La apagamos.
+      '@typescript-eslint/unbound-method': 'off',
+
+      // `require-await` es útil, pero en providers que implementan
+      // interfaces con métodos async (aunque sean síncronos) da falsos positivos.
+      '@typescript-eslint/require-await': 'off',
     },
   },
 );

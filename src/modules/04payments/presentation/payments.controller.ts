@@ -25,10 +25,7 @@ export class PaymentsController {
   })
   @ApiOkResponse({ description: 'Webhook procesado' })
   @ApiBadRequestResponse({ description: 'Payload inválido' })
-  async handleWebhook(
-    @Body() payload: PaymentWebhookPayload,
-    @Headers() headers: Record<string, string>,
-  ) {
+  async handleWebhook(@Body() payload: PaymentWebhookPayload) {
     await this.handleWebhookUC.execute(payload);
     return { received: true };
   }

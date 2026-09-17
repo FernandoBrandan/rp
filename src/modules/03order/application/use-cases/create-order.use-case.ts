@@ -4,7 +4,6 @@ import {
   Inject,
   HttpException,
   BadRequestException,
-  ConflictException,
 } from '@nestjs/common';
 import { Logger } from '@infra/logger/logger.interface';
 
