@@ -37,10 +37,10 @@ describe('TypeOrmCartRepository (integration)', () => {
     const found = await repo.getCart('user-1');
 
     expect(found).not.toBeNull();
-    expect(found!.userId).toBe('user-1');
-    expect(found!.items).toHaveLength(1);
-    expect(found!.items[0].productId).toBe('prod-1');
-    expect(found!.items[0].quantity).toBe(2);
+    expect(found.userId).toBe('user-1');
+    expect(found.items).toHaveLength(1);
+    expect(found.items[0].productId).toBe('prod-1');
+    expect(found.items[0].quantity).toBe(2);
   });
 
   it('actualiza un carrito existente (upsert)', async () => {
@@ -51,7 +51,7 @@ describe('TypeOrmCartRepository (integration)', () => {
     await repo.save(cart);
 
     const found = await repo.getCart('user-1');
-    expect(found!.items).toHaveLength(2);
+    expect(found.items).toHaveLength(2);
   });
 
   it('clear() borra el carrito', async () => {
@@ -71,7 +71,7 @@ describe('TypeOrmCartRepository (integration)', () => {
     await repo.save(cart);
     const found = await repo.getCart('user-1');
 
-    expect(found!.items.map((i) => i.productId)).toEqual(['prod-1', 'prod-2']);
-    expect(found!.items.map((i) => i.quantity)).toEqual([2, 5]);
+    expect(found.items.map((i) => i.productId)).toEqual(['prod-1', 'prod-2']);
+    expect(found.items.map((i) => i.quantity)).toEqual([2, 5]);
   });
 });

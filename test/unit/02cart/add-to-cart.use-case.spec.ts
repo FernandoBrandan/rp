@@ -33,8 +33,8 @@ describe('AddToCartUseCase', () => {
     const repo = makeRepo(null);
     const checker = makeChecker(true);
     const useCase = new AddToCartUseCase(
-      repo as any,
-      checker as any,
+      repo,
+      checker,
       makeLogger(),
     );
 
@@ -53,8 +53,8 @@ describe('AddToCartUseCase', () => {
     const repo = makeRepo(existing);
     const checker = makeChecker(true);
     const useCase = new AddToCartUseCase(
-      repo as any,
-      checker as any,
+      repo,
+      checker,
       makeLogger(),
     );
 
@@ -69,8 +69,8 @@ describe('AddToCartUseCase', () => {
     const repo = makeRepo(null);
     const checker = makeChecker(false, 'PRODUCT_NOT_FOUND');
     const useCase = new AddToCartUseCase(
-      repo as any,
-      checker as any,
+      repo,
+      checker,
       makeLogger(),
     );
 
@@ -85,8 +85,8 @@ describe('AddToCartUseCase', () => {
     const repo = makeRepo(null);
     const checker = makeChecker(false, 'PRODUCT_INACTIVE');
     const useCase = new AddToCartUseCase(
-      repo as any,
-      checker as any,
+      repo,
+      checker,
       makeLogger(),
     );
 
@@ -99,8 +99,8 @@ describe('AddToCartUseCase', () => {
     const repo = makeRepo(null);
     const checker = makeChecker(false, 'INSUFFICIENT_STOCK');
     const useCase = new AddToCartUseCase(
-      repo as any,
-      checker as any,
+      repo,
+      checker,
       makeLogger(),
     );
 

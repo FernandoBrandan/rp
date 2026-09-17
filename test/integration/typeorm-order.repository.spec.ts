@@ -40,10 +40,10 @@ describe('TypeOrmOrderRepository (integration)', () => {
     const found = await repo.getOrderDetail('ORDER-1');
 
     expect(found).not.toBeNull();
-    expect(found!.id).toBe('ORDER-1');
-    expect(found!.userId).toBe('user-1');
-    expect(found!.total.getValue()).toBe(200);
-    expect(found!.status).toBe(OrderStatus.PENDING);
+    expect(found.id).toBe('ORDER-1');
+    expect(found.userId).toBe('user-1');
+    expect(found.total.getValue()).toBe(200);
+    expect(found.status).toBe(OrderStatus.PENDING);
   });
 
   it('getOrderDetail devuelve null si no existe', async () => {
@@ -58,7 +58,7 @@ describe('TypeOrmOrderRepository (integration)', () => {
     const found = await repo.findByIdempotencyKey('key-1');
 
     expect(found).not.toBeNull();
-    expect(found!.id).toBe('ORDER-1');
+    expect(found.id).toBe('ORDER-1');
   });
 
   it('falla si la idempotencyKey ya existe (unique constraint)', async () => {
@@ -77,7 +77,7 @@ describe('TypeOrmOrderRepository (integration)', () => {
     await repo.update(order);
 
     const found = await repo.getOrderDetail('ORDER-1');
-    expect(found!.status).toBe(OrderStatus.PAID);
+    expect(found.status).toBe(OrderStatus.PAID);
   });
 
   it('getOrdersByUser devuelve solo las del usuario', async () => {
@@ -104,7 +104,7 @@ describe('TypeOrmOrderRepository (integration)', () => {
 
     const found = await repo.getOrderDetail('ORDER-1');
 
-    expect(found!.items).toHaveLength(2);
-    expect(found!.total.getValue()).toBe(250);
+    expect(found.items).toHaveLength(2);
+    expect(found.total.getValue()).toBe(250);
   });
 });

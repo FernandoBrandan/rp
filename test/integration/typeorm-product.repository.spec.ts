@@ -44,11 +44,11 @@ describe('TypeOrmProductRepository (integration)', () => {
     const found = await repo.findById(product.id);
 
     expect(found).not.toBeNull();
-    expect(found!.serial.getValue()).toBe('PROD-000001');
-    expect(found!.name).toBe('Laptop');
-    expect(found!.price.getValue()).toBe(100);
-    expect(found!.stock).toBe(10);
-    expect(found!.status).toBe(ProductStatus.ACTIVE);
+    expect(found.serial.getValue()).toBe('PROD-000001');
+    expect(found.name).toBe('Laptop');
+    expect(found.price.getValue()).toBe(100);
+    expect(found.stock).toBe(10);
+    expect(found.status).toBe(ProductStatus.ACTIVE);
   });
 
   it('findBySerial devuelve null si no existe', async () => {
@@ -98,7 +98,7 @@ describe('TypeOrmProductRepository (integration)', () => {
     await repo.save(product);
 
     const found = await repo.findById(product.id);
-    expect(found!.name).toBe('Mouse');
-    expect(found!.price.getValue()).toBe(250);
+    expect(found.name).toBe('Mouse');
+    expect(found.price.getValue()).toBe(250);
   });
 });

@@ -12,7 +12,7 @@ describe('CreatePaymentLinkUseCase', () => {
     const provider = {
       generatePaymentLink: jest.fn().mockResolvedValue({ url: 'http://pay/1' }),
     };
-    const useCase = new CreatePaymentLinkUseCase(provider as any);
+    const useCase = new CreatePaymentLinkUseCase(provider);
 
     const url = await useCase.execute(order);
 
@@ -24,7 +24,7 @@ describe('CreatePaymentLinkUseCase', () => {
     const provider = {
       generatePaymentLink: jest.fn().mockResolvedValue({ url: '' }),
     };
-    const useCase = new CreatePaymentLinkUseCase(provider as any);
+    const useCase = new CreatePaymentLinkUseCase(provider);
 
     await expect(useCase.execute(order)).rejects.toThrow(
       'Payment provider returned an empty URL',
@@ -35,7 +35,7 @@ describe('CreatePaymentLinkUseCase', () => {
     const provider = {
       generatePaymentLink: jest.fn().mockRejectedValue(new Error('timeout')),
     };
-    const useCase = new CreatePaymentLinkUseCase(provider as any);
+    const useCase = new CreatePaymentLinkUseCase(provider);
 
     await expect(useCase.execute(order)).rejects.toThrow('timeout');
   });

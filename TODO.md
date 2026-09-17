@@ -27,6 +27,8 @@ Orden de ejecución recomendado
 - - si OrderPaidListener falla a medias (pay() ok, confirmReservation() falla) queda inconsistente.
 - - Considera outbox pattern.
 
+# CI gitactions tiro error ver despues
+
 ### 🟡 Suscriptores de eventos (los de tu nota)
 
 11. **`CartSubscriber`** (más simple, mejor punto de entrada)

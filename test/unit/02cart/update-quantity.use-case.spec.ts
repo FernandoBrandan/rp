@@ -29,7 +29,7 @@ describe('UpdateQuantityUseCase', () => {
     };
     const useCase = new UpdateQuantityUseCase(
       repo as any,
-      makeChecker(true) as any,
+      makeChecker(true),
       makeLogger(),
     );
 
@@ -42,7 +42,7 @@ describe('UpdateQuantityUseCase', () => {
     const repo = { getCart: jest.fn(), save: jest.fn() };
     const useCase = new UpdateQuantityUseCase(
       repo as any,
-      makeChecker(false, 'INSUFFICIENT_STOCK') as any,
+      makeChecker(false, 'INSUFFICIENT_STOCK'),
       makeLogger(),
     );
 
@@ -58,7 +58,7 @@ describe('UpdateQuantityUseCase', () => {
     };
     const useCase = new UpdateQuantityUseCase(
       repo as any,
-      makeChecker(true) as any,
+      makeChecker(true),
       makeLogger(),
     );
 

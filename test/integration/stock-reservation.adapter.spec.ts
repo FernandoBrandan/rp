@@ -22,7 +22,7 @@ describe('StockReservationAdapter (integration)', () => {
     adapter = new StockReservationAdapter(
       db.dataSource,
       db.dataSource.getRepository(StockReservationEntity),
-      makeLogger() as any,
+      makeLogger(),
     );
   }, 60_000);
 
@@ -49,14 +49,14 @@ describe('StockReservationAdapter (integration)', () => {
     const p = await db.dataSource
       .getRepository(ProductEntity)
       .findOne({ where: { id } });
-    return p!.stock;
+    return p.stock;
   }
 
   async function getReservationStatus(reservationId: string): Promise<string> {
     const r = await db.dataSource
       .getRepository(StockReservationEntity)
       .findOne({ where: { id: reservationId } });
-    return r!.status;
+    return r.status;
   }
 
   // ─── reserveStock ──────────────────────────────────────────────
