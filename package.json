@@ -80,15 +80,32 @@
       "json",
       "ts"
     ],
-    "rootDir": "src",
+    "rootDir": ".",
+    "roots": [
+      "<rootDir>/src",
+      "<rootDir>/test"
+    ],
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
     },
     "collectCoverageFrom": [
-      "**/*.(t|j)s"
+      "src/**/*.(t|j)s"
     ],
-    "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
+    "coverageDirectory": "./coverage",
+    "testEnvironment": "node",
+    "moduleNameMapper": {
+      "^@common/(.*)$": "<rootDir>/src/common/$1",
+      "^@infra/(.*)$": "<rootDir>/src/infra/$1",
+      "^@catalog/(.*)$": "<rootDir>/src/modules/01catalog/$1",
+      "^@cart/(.*)$": "<rootDir>/src/modules/02cart/$1",
+      "^@order/(.*)$": "<rootDir>/src/modules/03order/$1",
+      "^@payment/(.*)$": "<rootDir>/src/modules/04payments/$1",
+      "^@identity/(.*)$": "<rootDir>/src/modules/identity/$1"
+    },
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "\\.e2e-spec\\.ts$"
+    ]
   }
 }

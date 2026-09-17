@@ -16,6 +16,7 @@
     "strictBindCallApply": false,
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false,
+    "types": ["jest", "node"],
     "paths": {
       "@common/*": ["./src/common/*"],
       "@infra/*": ["./src/infra/*"],

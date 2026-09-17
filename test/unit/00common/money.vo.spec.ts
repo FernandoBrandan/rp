@@ -1,4 +1,4 @@
-import { Money } from './money.vo';
+import { Money } from '../../../src/common/domain/value-objects/money.vo';
 
 // npm ci
 // npm run lint
