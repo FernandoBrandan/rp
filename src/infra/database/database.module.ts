@@ -4,14 +4,16 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 @Module({
-  imports: [ 
+  imports: [
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
 
-      useFactory: (config: ConfigService) => { 
+      useFactory: (config: ConfigService) => {
         const nodeEnv = config.get<string>('NODE_ENV');
         const isProduction = nodeEnv === 'prod';
+        const isTest = nodeEnv === 'test';
+
         return {
           type: 'postgres',
           host: config.get<string>('DB_HOST'),
@@ -23,8 +25,10 @@ import { TypeOrmModule } from '@nestjs/typeorm';
           autoLoadEntities: true,
 
           synchronize: !isProduction,
-          
-          migrations: ['dist/infra/database/migrations/*.js'],
+
+          migrations: isProduction
+            ? ['dist/infra/database/migrations/*.js']
+            : [],
           migrationsRun: isProduction,
           migrationsTableName: 'migrations',
 
@@ -35,9 +39,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
             idleTimeoutMillis: 30_000,
             connectionTimeoutMillis: 5_000,
           },
-          
-          retryAttempts: 5,
-          retryDelay: 3000,
+
+          retryAttempts: isTest ? 0 : 5,
+          retryDelay: isTest ? 0 : 3000,
         };
       },
     }),

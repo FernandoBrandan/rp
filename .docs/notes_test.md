@@ -263,3 +263,134 @@ describe('NombreDeLaClase', () => {
 | expect(arr).toContsain('algo')        | array contiene                               |
 |                                       |                                              |
 | ------------------------------------- | -------------------------------------------- |
+
+- Tests de integración con DB real (Testcontainers o pg-mem).
+  Ahí se prueban los repositorios TypeORM. Ojo: pg-mem es más rápido pero tiene limitaciones (no soporta enum de Postgres, por ejemplo). Testcontainers es más fiel.
+
+- E2E con supertest — el flujo completo:
+  POST /products → POST /cart → POST /orders → POST /payments/webhook → GET /orders/:id debe estar PAID.
+
+- Fake timers avanzados — hay un test que todavía no escribimos y que es interesante: verificar que un webhook duplicado no rompe (la orden ya está PAID, otro webhook llega). Y el test de race condition con la idempotencyKey.
+
+## Parte 1 — Consigna: "Agregar efectos secundarios a los primeros tests"
+
+### Objetivo
+
+Los 3 tests originales de `catalog` (`get-product`, `list-products`, `create-product`) cubren camino feliz + errores esperados.
+**No cubren efectos secundarios**: llamadas al logger, qué se pasó a `save`, si se llamó o no a un método.
+
+La consigna es: **agregar tests que verifiquen el "cómo", no solo el "qué"**.
+
+### Qué probar en cada uno
+
+| Use case               | Efecto a verificar                                                                                                                                |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GetProductUseCase`    | `logger.info` llamado con `{ serial }` en el happy path. <br>`logger.warn` llamado cuando no encuentra.                                           |
+| `ListProductsUseCase`  | `logger.info` llamado al ejecutar.                                                                                                                |
+| `CreateProductUseCase` | `logger.info` llamado al crear. <br>`save` recibió un `Product` con el serial correcto. <br>`save` **no** se llamó cuando el serial era inválido. |
+
+### Cómo verificar que ya está completo
+
+- Cada use case tiene al menos **un test extra** que hace `expect(logger.X).toHaveBeenCalledWith(...)`.
+- En `CreateProductUseCase`, hay un test que accede a `repo.save.mock.calls[0][0]` y verifica el contenido del `Product` guardado.
+- `npm test` sigue todo en verde.
+
+### Archivos a tocar
+
+```
+test/unit/01catalog/get-product.use-case.spec.ts
+test/unit/01catalog/list-products.use-case.spec.ts
+test/unit/01catalog/create-product.use-case.spec.ts
+```
+
+---
+
+## Parte 2 — Notas para retomar otro día
+
+### Lo que tenés
+
+- 20 suites, 85 tests pasando (después de arreglar el de `InsufficientStock`).
+- Cobertura de dominio completa: entidades + VOs.
+- Cobertura de aplicación casi completa: use cases, listeners, providers.
+- Patrones que ya usás sin pensar:
+  - `jest.fn()` + `.mockResolvedValue()` / `.mockRejectedValue()`
+  - `expect(promise).rejects.toThrow()`
+  - `toHaveBeenCalledWith`, `not.toHaveBeenCalled`
+  - `expect.objectContaining()`, `expect.anything()`
+  - `jest.useFakeTimers()` + `advanceTimersByTime()`
+  - Factories (`makeLogger`, `makeDeps`, `makeProduct`)
+
+### Lo que te falta para la consigna
+
+**Para `GetProductUseCase`:**
+
+```ts
+it('loguea info con el serial al ejecutar', async () => {
+  const product = makeProduct();
+  const repo = { findBySerial: jest.fn().mockResolvedValue(product) };
+  const logger = makeLogger(); // ← necesitás pasar el logger, no crearlo inline
+  const useCase = new GetProductUseCase(repo as any, logger);
+
+  await useCase.execute('PROD-000001');
+
+  expect(logger.info).toHaveBeenCalledWith('Getting product', {
+    serial: 'PROD-000001',
+  });
+});
+```
+
+**Nota clave**: hoy en varios tests pasás `makeLogger()` inline. Para verificar el logger, tenés que guardarlo en una variable:
+
+```ts
+// ❌ hoy
+const useCase = new GetProductUseCase(repo as any, makeLogger());
+
+// ✅ para verificar efectos
+const logger = makeLogger();
+const useCase = new GetProductUseCase(repo as any, logger);
+expect(logger.info).toHaveBeenCalledWith(...);
+```
+
+**Para `CreateProductUseCase` (verificar el contenido de `save`):**
+
+```ts
+it('guarda un Product con el serial correcto', async () => {
+  const repo = { save: jest.fn().mockResolvedValue(undefined) };
+  const useCase = new CreateProductUseCase(repo as any, makeLogger());
+
+  await useCase.execute({
+    serial: 'PROD-000001',
+    name: 'Laptop',
+    price: 100,
+    stock: 10,
+  });
+
+  const savedProduct = repo.save.mock.calls[0][0] as Product;
+  expect(savedProduct.serial.getValue()).toBe('PROD-000001');
+  expect(savedProduct.name).toBe('Laptop');
+  expect(savedProduct.stock).toBe(10);
+});
+```
+
+**El método mágico**: `mock.calls[0][0]` te da el primer argumento de la primera llamada al mock. Con eso accedés al objeto que se intentó guardar.
+
+### Lo que NO hay que hacer
+
+- No cambies el código de producción para que el test sea más fácil.
+- No uses `expect.anything()` cuando podés verificar el valor exacto.
+- No verifiques **todo** en cada test. Un test = una idea. Si querés verificar logger y save, son dos tests.
+
+### Checklist de cierre
+
+```
+□ get-product.spec.ts tiene test de logger.info en happy path
+□ get-product.spec.ts tiene test de logger.warn cuando no encuentra
+□ list-products.spec.ts tiene test de logger.info
+□ create-product.spec.ts tiene test de logger.info al crear
+□ create-product.spec.ts verifica contenido de save con mock.calls
+□ npm test → todo verde
+```
+
+# Test integracion
+
+npx jest test/integration --runInBand
