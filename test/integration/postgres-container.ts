@@ -4,6 +4,7 @@ import {
 } from '@testcontainers/postgresql';
 import { DataSource } from 'typeorm';
 
+import { UserEntity } from '@user/infra/persistence/user.orm-entity';
 import { ProductEntity } from '@catalog/infra/persistence/product.orm-entity';
 import { StockReservationEntity } from '@catalog/infra/persistence/stock-reservation.orm-entity';
 import { CartOrmEntity } from '@cart/infra/persistence/cart.orm-entity';
@@ -28,6 +29,7 @@ export class TestDatabase {
       password: 'test',
       database: 'test',
       entities: [
+        UserEntity,
         ProductEntity,
         StockReservationEntity,
         CartOrmEntity,

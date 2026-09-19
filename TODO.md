@@ -1,25 +1,42 @@
-# Checklist de verificación
+# Primario - Cambios estructurales - FASE 2
 
-Después de aplicar todo:
+```ts
+export interface IProduct {
+  id: string;
+  serial: Serial; MODIFICAR SKU: SKU;
+  name: string;
+  description: string; AGREGAR
+  categories: string; AGREGAR
+  metadata: string; AGREGAR
+  price: Money; MODIFICAR salePrice: Money;
+  stock: number; ELIMINAR
+  status: ProductStatus;
+}
+```
 
-    □    npm run start:dev arranca sin errores → usa .env.dev
-    □    Si borrás DB_HOST de .env.dev, el boot falla con mensaje claro de Joi
-    □    docker compose up -d levanta Postgres + Redis con healthchecks verdes
-    □    npm run migration:generate crea la migration inicial
-    □    npm run migration:run la aplica
-    □    docker compose -f docker-compose.prod.yml up --build levanta todo
-    □    curl localhost:3000/health responde OK desde el container
-    □    docker stop ecommerce_app cierra limpio (no corta conexiones)
-    □    .env y .env.prod no están en git (git status limpio)
+- Usecase
+- - validad si existe producto
+- - No existe: emitir evento de stock `quisieron comprar`
+- - Dejar el producto innactivo hasta reestockear
+- - En invetary si repone stock emitir evento a catalogo `activar`
 
-Orden de ejecución recomendado
+- Modulo inventario: Main
+  InventoryItem - ejemplo
+  ├── id
+  ├── productId - validar en catalog
+  ├── stock - total
+  ├── available - total - reserved ??
+  ├── reserved
+  ├── minimumStock
+  ├── purchasePrice
 
-- Env validation + .env.example + .env.dev (30 min) — es lo que desbloquea todo
-- Data source + scripts de migration (30 min)
-- Generar primera migration (15 min)
-- Dockerfile + docker-compose.yml dev (30 min)
-- docker-compose.prod.yml (15 min)
-- Graceful shutdown (10 min)
+- Modulo inventario: Registra movimientos
+  StockMovement
+  ├── productId - validar en catalog
+  ├── quantity
+  ├── type = PURCHASE
+  ├── referenceId = purchaseOrderId
+  └── createdAt
 
 # Ver
 
@@ -27,7 +44,17 @@ Orden de ejecución recomendado
 - - si OrderPaidListener falla a medias (pay() ok, confirmReservation() falla) queda inconsistente.
 - - Considera outbox pattern.
 
-# CI gitactions tiro error ver despues
+## Agregar a todos los orm entity
+
+@CreateDateColumn()
+createdAt: Date;
+
+@UpdateDateColumn()
+updatedAt: Date;
+
+# CI gitactions tiro error ver despues -> ver quehacer con los warning
+
+- opcion : ingnorar lint
 
 ### 🟡 Suscriptores de eventos (los de tu nota)
 
@@ -60,11 +87,6 @@ Orden de ejecución recomendado
     - Manejo de errores: mapear a `InfrastructureException`
 
 ---
-
-# ⚫ Backlog
-
-- Tests e2e — happy path, fallo del provider, concurrencia por idempotencyKey.
-- InventorySubscriber — solo si stock crece.
 
 # Dominios separados
 

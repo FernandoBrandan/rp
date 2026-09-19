@@ -17,7 +17,8 @@ Para este MVP: no aplica.
 
 ## MVP (Fase 1)
 
-**Objetivo**: un usuario puede registrarse, loguearse y recibir un access token. Los endpoints protegidos validan ese token.
+**Objetivo**: un usuario puede registrarse, loguearse y recibir un access token.
+Los endpoints protegidos validan ese token.
 
 ### Dominio
 

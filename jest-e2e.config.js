@@ -9,8 +9,11 @@ module.exports = {
   },
   moduleNameMapper: {
     // ─── Alias del proyecto ─────────────────────────────────────
+    '^@main/(.*)$': '<rootDir>/src/$1',
     '^@common/(.*)$': '<rootDir>/src/common/$1',
     '^@infra/(.*)$': '<rootDir>/src/infra/$1',
+    '^@auth/(.*)$': '<rootDir>/src/modules/00auth/$1',
+    '^@user/(.*)$': '<rootDir>/src/modules/00user/$1',
     '^@catalog/(.*)$': '<rootDir>/src/modules/01catalog/$1',
     '^@cart/(.*)$': '<rootDir>/src/modules/02cart/$1',
     '^@order/(.*)$': '<rootDir>/src/modules/03order/$1',

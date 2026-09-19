@@ -33,7 +33,7 @@ describe('UpdateQuantityUseCase', () => {
       makeLogger(),
     );
 
-    await useCase.execute('user-1', { productId: 'prod-1', quantity: 5 });
+    await useCase.execute('user-1', 'prod-1', { quantity: 5 });
 
     expect(cart.items[0].quantity).toBe(5);
   });
@@ -47,7 +47,7 @@ describe('UpdateQuantityUseCase', () => {
     );
 
     await expect(
-      useCase.execute('user-1', { productId: 'prod-1', quantity: 1000 }),
+      useCase.execute('user-1', 'prod-1', { quantity: 1000 }),
     ).rejects.toThrow(BadRequestException);
   });
 
@@ -63,7 +63,7 @@ describe('UpdateQuantityUseCase', () => {
     );
 
     await expect(
-      useCase.execute('user-1', { productId: 'prod-1', quantity: 5 }),
+      useCase.execute('user-1', 'prod-1', { quantity: 5 }),
     ).rejects.toThrow(NotFoundException);
   });
 });

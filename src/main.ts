@@ -1,5 +1,6 @@
 // src/main.ts
 import { NestFactory } from '@nestjs/core';
+import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
@@ -10,12 +11,20 @@ import { InfrastructureExceptionFilter } from '@common/filters/infrastructure-ex
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  
+
   // Config
   app.enableShutdownHooks();
   app.use(correlationIdMiddleware);
   app.useGlobalFilters(new AllExceptionsFilter(new AppLogger()));
   app.useGlobalFilters(new InfrastructureExceptionFilter());
+
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
 
   // Swagger
   const config = new DocumentBuilder()
@@ -24,11 +33,13 @@ async function bootstrap() {
       'API de catálogo, carrito, órdenes y pagos. Flujo event-driven con idempotencia.',
     )
     .setVersion('1.0')
+    .addTag('health', 'Estado del servicio')
+    .addTag('auth', 'Autenticación')
+    .addTag('users', 'Perfiles de usuario')
     .addTag('products', 'Gestión de catálogo')
     .addTag('cart', 'Carrito de compras')
     .addTag('orders', 'Órdenes e idempotencia')
     .addTag('payments', 'Webhooks y proveedores de pago')
-    .addTag('health', 'Estado del servicio')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

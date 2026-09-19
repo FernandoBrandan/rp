@@ -24,83 +24,75 @@ No se avanza a la siguiente sin cerrar la anterior.
 
 **Objetivo**: esqueleto ejecutable, sin features de negocio.
 
-- Configuración por environment (`.env.dev` · `.env.prod`)
+- Configuración por environment (`.env.dev` · `.env.prod`, `.env.example`)
 - Logger mínimo (consola)
-- Manejo global de errores
-- ValidationPipe global
-- Health check simple (`/health` valida DB)
-- Conexión a DB + migraciones
-- Migrations (NO `synchronize: true`)
-- Graceful shutdown (SIGTERM → cerrar conexiones)
+- Conexión a DB + migration:run (`synchronize: true` solo dev)
+- Seed script — datos mínimos para desarrollo (1 admin, 3 productos)
+- Manejo global de errores + ValidationPipe global
+- Health check
+- Graceful shutdown (Ctrl+C en la app cierra conexiones limpiamente)
 
+- Docker básico (app + postgres + redis) - `Dockerfile`, `docker-compose.yml`
 - Docker multi-stage build
-- Docker básico (app + postgres + redis)
 
-- Pipeline mínimo (tests → build → image → run)
-
-- Variables de entorno bien gestionadas.
-- **`.env.example`** — plantilla sin secretos, commiteada
-- Entornos dev / staging
+- CI base — GitHub Actions corriendo lint + build + tests en cada PR
+- Pipeline mínimo (tests → build → image → run) `.github/workflows/ci.yml`
 
 **Conceptos a conocer**:
 
 - 12-factor app (metodología detrás de la config por env)
 
-**Entregables**:
-
-- `.env.dev`, `.env.prod`, `.env.example`
-- `Dockerfile`, `docker-compose.yml`
-- `.github/workflows/ci.yml`
-- `src/scripts/seed.ts`
-
-**Exit criteria**:
-
-- `docker compose up` levanta todo, `/health` responde OK.
-- **Seed script** — datos mínimos para desarrollo (1 admin, 3 productos)
-- `npm run seed` carga datos de demo
-- **CI base** — GitHub Actions corriendo lint + build + tests en cada PR
-- Un push a `main` corre CI verde
-- Ctrl+C en la app cierra conexiones limpiamente
-
 ---
 
 ## FASE 1 — MVP funcional
 
-**Objetivo**: flujo completo Register → Login → Browse → Cart → Checkout → Payment → Order.
+**Objetivo**: flujo completo Identity → Catalog → Cart → Ordering → Payment → Notification.
+idempotencia, compensación y stock nunca negativo.
 
-**Conceptos a practicar — Dominio (DDD)**:
+Regla de avance: cada bloque cierra con:
 
-- Value Objects: `Money`, `Email`, `Serial`
-- Entity vs Value Object
-- Aggregate / Aggregate Root
+- dominio + infra + use cases + controller
+- tests unitarios e integración si toca DB/Redis, smoke test manual o script
+- CI en verde
+
+- **Identity**: register, login, JWT, roles USER/ADMIN
+- **Catalog**: CRUD productos, stock
+- **Cart**: CRUD (solo DB, sin cache)
+- **Ordering**: crear orden, 3 estados (PENDING/PAID/FAILED), idempotencia
+- **Payment**: provider fake con delay configurable
+- **Notification**: log a consola (no email real)
+- **Inventory**: reserva + liberación (puede vivir dentro de Catalog)
+
+**Dominio (DDD)**:
+
+- Entity vs Value Object (`Money`, `Email`, `Serial`)
 - Invariantes validadas en constructor y métodos
 - Repository pattern (interface en `domain/`, implementación en `infra/`)
 - Domain Service (lógica que no pertenece a una entidad)
-- Application Service / Use Case
 - Dependency Inversion (ports + adapters entre BCs)
-- Anti-Corruption Layer (cada BC traduce el lenguaje del otro)
 - Bounded Context
+- Application Service / Use Case
+- Anti-Corruption Layer (cada BC traduce el lenguaje del otro)
+- X - Aggregate / Aggregate Root
 
-**Conceptos a practicar — Consistencia**:
+**Consistencia**:
 
 - Idempotency Key (`idempotencyKey` unique constraint)
 - Race condition handling (`UPDATE ... WHERE stock >= qty`)
-- Unique constraint a nivel DB (defensa en profundidad)
+- Unique constraint a nivel DB
 - Transacciones locales (una sola DB)
 - Máquina de estados explícita (State pattern)
 - Transiciones válidas vs inválidas
 - Compensating transaction (versión mínima: si falla pago → liberar reserva)
 
-**Conceptos a practicar — API / Auth**:
+**API / Auth**:
 
 - DTOs + validation (`class-validator`)
-- JWT access token
-- bcrypt para passwords
+- JWT access token bcrypt para passwords
 - Guards (auth, roles)
 - Middleware (correlation ID)
 - Domain Events in-process (`EventEmitter2`)
-- REST API design
-- Paginación básica
+- REST API design - Paginación básica
 
 **Conceptos a conocer**:
 
@@ -108,25 +100,15 @@ No se avanza a la siguiente sin cerrar la anterior.
 - Event Sourcing (por qué NO en MVP)
 - CQRS (por qué NO en MVP)
 
--
-
-- **Identity**: register, login, JWT, roles USER/ADMIN
-- **Catalog**: CRUD productos, stock
-- **Cart**: agregar, quitar, actualizar (solo DB, sin cache)
-- **Ordering**: crear orden, 3 estados (PENDING/PAID/FAILED), idempotencia
-- **Inventory**: reserva + liberación (puede vivir dentro de Catalog)
-- **Payment**: provider fake con delay configurable
-- **Notification**: log a consola (no email real)
-
 **NO incluye**: cache, retry, circuit breaker, métricas, shipping, notification real.
 
 **Exit criteria**:
 
 - flujo end-to-end funciona con doble submit (idempotencia OK).
 - Doble submit del mismo `idempotencyKey` devuelve la misma orden
-- Endpoint protegido rechaza requests sin token
 - Si el pago falla, la reserva de stock se libera
 - El stock nunca queda negativo bajo concurrencia
+- Endpoint protegido rechaza requests sin token
 
 ---
 
@@ -138,7 +120,7 @@ No se avanza a la siguiente sin cerrar la anterior.
 
 - Timeout explícito (toda llamada externa)
 - Retry con exponential backoff
-- **Jitter** en retry (evita thundering herd)
+- Jitter en retry (evita thundering herd)
 - Circuit Breaker con 3 estados (CLOSED / OPEN / HALF_OPEN)
 - Bulkhead (aislar cargas peligrosas)
 - Graceful degradation (el sistema sigue funcionando parcial)

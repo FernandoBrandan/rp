@@ -28,8 +28,8 @@ export class UpdateQuantityUseCase {
     private readonly logger: Logger,
   ) {}
 
-  async execute(userId: string, dto: UpdateQuantityDTO) {
-    const { productId, quantity } = dto;
+  async execute(userId: string, productId: string, dto: UpdateQuantityDTO) {
+    const { quantity } = dto;
 
     this.logger.info('Updating product quantity in cart', {
       userId,

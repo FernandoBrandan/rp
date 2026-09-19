@@ -63,7 +63,7 @@ Idempotencia en lugar de locks.
 
 ## Stack
 
-Node.js 20 · TypeScript · NestJS · PostgreSQL · TypeORM · Redis · Docker
+Node.js · TypeScript · NestJS · PostgreSQL · TypeORM · Redis · Docker
 
 ---
 

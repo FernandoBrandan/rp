@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Param, Post, Put } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Put,
+  UseGuards,
+} from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -8,6 +16,11 @@ import {
   ApiNotFoundResponse,
   ApiConflictResponse,
 } from '@nestjs/swagger';
+
+import { AuthGuard } from '@infra/auth-infra/guards/jwt-auth.guard';
+import { RolesGuard } from '@infra/auth-infra/guards/roles.guard';
+import { Roles } from '@infra/auth-infra/decorators/roles.decorator';
+import { UserRole } from '@common/user-role.enum';
 
 import { CreateProductUseCase } from '../application/use-cases/create-product.use-case';
 import { UpdateProductUseCase } from '../application/use-cases/update-product.use-case';
@@ -29,6 +42,8 @@ export class CatalogController {
   ) {}
 
   @Post()
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Crear un producto' })
   @ApiCreatedResponse({
     description: 'Producto creado',
@@ -41,6 +56,8 @@ export class CatalogController {
   }
 
   @Put()
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Actualizar un producto por serial' })
   @ApiOkResponse({
     description: 'Producto actualizado',
@@ -52,15 +69,15 @@ export class CatalogController {
     return this.updateProduct.execute(dto);
   }
 
-  @Get(':id')
+  @Get(':serial')
   @ApiOperation({ summary: 'Obtener un producto por serial' })
   @ApiOkResponse({
     description: 'Producto encontrado',
     type: ProductResponseDTO,
   })
   @ApiNotFoundResponse({ description: 'Producto no encontrado' })
-  get(@Param('id') id: string): Promise<ProductResponseDTO> {
-    return this.getProduct.execute(id);
+  get(@Param('serial') serial: string): Promise<ProductResponseDTO> {
+    return this.getProduct.execute(serial);
   }
 
   @Get()

@@ -29,7 +29,7 @@
     "migration:run:prod": "NODE_ENV=prod npm run migration:run",
     "migration:revert": "npm run typeorm -- migration:revert",
     "migration:show": "npm run typeorm -- migration:show",
-    "seed:dev": "NODE_ENV=dev ts-node -r tsconfig-paths/register src/scripts/seed.ts",
+    "seed:dev": "NODE_ENV=dev ts-node -r tsconfig-paths/register src/infra/database/seeders/seed.ts",
     "seed:prod": "NODE_ENV=prod node dist/scripts/seed.js"
   },
   "dependencies": {
@@ -42,6 +42,7 @@
     "@nestjs/swagger": "^11.3.0",
     "@nestjs/terminus": "^11.1.1",
     "@nestjs/typeorm": "^11.0.1",
+    "bcrypt": "^6.0.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
     "ioredis": "^5.10.1",
@@ -60,6 +61,7 @@
     "@nestjs/testing": "^11.1.19",
     "@testcontainers/postgresql": "^12.1.0",
     "@testcontainers/redis": "^12.1.0",
+    "@types/bcrypt": "^6.0.0",
     "@types/express": "^5.0.0",
     "@types/jest": "^29.5.14",
     "@types/joi": "^17.2.2",
@@ -103,8 +105,11 @@
     "coverageDirectory": "./coverage",
     "testEnvironment": "node",
     "moduleNameMapper": {
+      "^@main/(.*)$": "<rootDir>/src/$1",
       "^@common/(.*)$": "<rootDir>/src/common/$1",
       "^@infra/(.*)$": "<rootDir>/src/infra/$1",
+      "^@auth/(.*)$": "<rootDir>/src/modules/00auth/$1",
+      "^@user/(.*)$": "<rootDir>/src/modules/00user/$1",
       "^@catalog/(.*)$": "<rootDir>/src/modules/01catalog/$1",
       "^@cart/(.*)$": "<rootDir>/src/modules/02cart/$1",
       "^@order/(.*)$": "<rootDir>/src/modules/03order/$1",

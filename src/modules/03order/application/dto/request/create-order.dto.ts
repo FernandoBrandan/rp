@@ -4,7 +4,6 @@ import {
   IsArray,
   ValidateNested,
   IsNotEmpty,
-  IsUUID,
   IsNumber,
   Min,
 } from 'class-validator';
@@ -25,10 +24,6 @@ export class OrderItemDTO {
 }
 
 export class CreateOrderDTO {
-  @IsString()
-  @IsUUID()
-  userId: string;
-
   @IsString()
   @IsNotEmpty()
   idempotencyKey: string;

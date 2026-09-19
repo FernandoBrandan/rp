@@ -1,20 +1,21 @@
 # Catalog — ordenado por fases
 
----
-
 ## Decisión de diseño (aplica a todas las fases)
 
 **Stock vive en Catalog durante MVP. Se extrae a Inventory en v2.**
 
 Razón: en MVP, `stock` es un campo de `Product`. Cuando la lógica de reservas empieza a doler (compensaciones, liberaciones, invariantes propias), se mueve a un BC propio.
 
-**Consecuencia para esta spec**: acá listo solo lo que es de Catalog. Todo lo de reservas/release vive en Inventory (spec aparte).
+**Consecuencia para esta spec**: acá listo solo lo que es de Catalog.
+Todo lo de reservas/release vive en Inventory (spec aparte).
 
 ---
 
 ## MVP (Fase 1)
 
-**Objetivo**: un admin puede crear y actualizar productos. Cualquiera puede listar y consultar productos. El stock se controla al vender.
+**Objetivo**: un admin puede crear y actualizar productos.
+Cualquiera puede listar y consultar productos.
+El stock se controla al vender.
 
 ### Dominio
 
@@ -25,6 +26,7 @@ Razón: en MVP, `stock` es un campo de `Product`. Cuando la lógica de reservas 
 - `ProductRepository` (interface)
 
 **Invariantes**:
+
 - `price >= 0`
 - `stock >= 0` (nunca negativo)
 - `name` no vacío
@@ -129,14 +131,14 @@ Razón: en MVP, `stock` es un campo de `Product`. Cuando la lógica de reservas 
 
 ## Reglas del BC
 
-| Regla | Por qué |
-|---|---|
-| `Product` es inmutable en su `id` y `serial` | Son identidad; cambiarlos rompe referencias |
-| Precio se maneja siempre como `Money`, nunca como `number` suelto | Evita errores de redondeo y validación |
-| Todo write pasa por `ProductRepository` | Un solo punto de invalidación de cache |
-| Stock no se toca desde Catalog después de v2 | Es del BC Inventory |
-| Endpoints de lectura sin auth | Catálogo público |
-| Endpoints de escritura con `ADMIN` | Un solo rol con permiso de mutación |
+| Regla                                                             | Por qué                                     |
+| ----------------------------------------------------------------- | ------------------------------------------- |
+| `Product` es inmutable en su `id` y `serial`                      | Son identidad; cambiarlos rompe referencias |
+| Precio se maneja siempre como `Money`, nunca como `number` suelto | Evita errores de redondeo y validación      |
+| Todo write pasa por `ProductRepository`                           | Un solo punto de invalidación de cache      |
+| Stock no se toca desde Catalog después de v2                      | Es del BC Inventory                         |
+| Endpoints de lectura sin auth                                     | Catálogo público                            |
+| Endpoints de escritura con `ADMIN`                                | Un solo rol con permiso de mutación         |
 
 ---
 
@@ -175,11 +177,11 @@ src/modules/01catalog/
 
 ## Dependencias entre BCs
 
-| Depende de | Para qué | Dirección |
-|---|---|---|
-| Identity | `JwtAuthGuard`, `RolesGuard`, `@CurrentUser()` | Catalog → Identity |
-| Inventory | Validar stock, reservar (v2+) | Catalog → Inventory (vía puerto) |
-| — | Cart, Ordering dependen de Catalog | Cart/Ordering → Catalog |
+| Depende de | Para qué                                       | Dirección                        |
+| ---------- | ---------------------------------------------- | -------------------------------- |
+| Identity   | `JwtAuthGuard`, `RolesGuard`, `@CurrentUser()` | Catalog → Identity               |
+| Inventory  | Validar stock, reservar (v2+)                  | Catalog → Inventory (vía puerto) |
+| —          | Cart, Ordering dependen de Catalog             | Cart/Ordering → Catalog          |
 
 Catalog es **consumido por** Cart y Ordering vía puertos (`ProductCheckerPort`, `ProductFinderPort`). No los conoce directamente.
 
@@ -193,4 +195,3 @@ En tu código actual, `CatalogController` tiene `GET /products/:id` pero el use 
 - **Opción B**: `GET /products/:id` (REST más clásico, requiere cambiar el use case)
 
 Recomiendo **A** porque `serial` es el identificador de negocio (el usuario lo conoce), mientras que `id` es técnico. Si querés ambos, `GET /products/:serial` y `GET /products/by-id/:id`.
- 

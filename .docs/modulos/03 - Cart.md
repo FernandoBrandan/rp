@@ -1,14 +1,11 @@
 # Cart — ordenado por fases
 
-Misma lógica que Identity y Catalog. Saqué notas personales, separé MVP de v2/v3.
-
----
-
 ## Decisión de diseño (aplica a todas las fases)
 
-**Cart es el BC con menos necesidad de consistencia fuerte. Es el candidato natural para cachear agresivamente.**
+**Cart es el BC con menos necesidad de consistencia fuerte. Necesita cache.**
 
 Propiedades que lo justifican:
+
 - **Reconstruible**: si se pierde, el usuario lo vuelve a armar
 - **No crítico**: no bloquea al negocio si falla 1 minuto
 - **Por usuario**: clave natural (`userId`), fácil de invalidar
@@ -23,6 +20,7 @@ Propiedades que lo justifican:
 Hay dos formas posibles y no son compatibles:
 
 **A. Actual (sin Identity)**: `userId` en el path
+
 ```
 GET    /cart/:userId
 POST   /cart/:userId
@@ -31,6 +29,7 @@ DELETE /cart/:userId/:productId
 ```
 
 **B. Objetivo (con Identity)**: `userId` viene del JWT
+
 ```
 GET    /cart
 POST   /cart/items
@@ -55,6 +54,7 @@ DELETE /cart/items/:productId
 - `CartRepository` (interface)
 
 **Invariantes**:
+
 - `quantity > 0` y entero
 - No duplicados: agregar el mismo `productId` **suma** cantidad, no duplica item
 - `removeItem` falla si el item no existe
@@ -156,14 +156,14 @@ Solo si el negocio lo pide.
 
 ## Reglas del BC
 
-| Regla | Por qué |
-|---|---|
-| `userId` siempre del JWT, nunca del cliente | Seguridad — evita ver/modificar carrito ajeno |
-| Validar contra Catalog **al agregar**, no al mostrar | Evita llenar el carrito de basura |
-| `GetCart` puede devolver items "rotos" (producto ya no existe) | El carrito es histórico; se filtran o marcan al mostrar |
-| El carrito **no** reserva stock | Reserva es responsabilidad de Inventory al hacer checkout |
-| Un solo carrito activo por usuario | Sin multi-carrito en MVP |
-| `Cart` no conoce `Order` | El carrito es pre-orden; no genera órdenes |
+| Regla                                                          | Por qué                                                   |
+| -------------------------------------------------------------- | --------------------------------------------------------- |
+| `userId` siempre del JWT, nunca del cliente                    | Seguridad — evita ver/modificar carrito ajeno             |
+| Validar contra Catalog **al agregar**, no al mostrar           | Evita llenar el carrito de basura                         |
+| `GetCart` puede devolver items "rotos" (producto ya no existe) | El carrito es histórico; se filtran o marcan al mostrar   |
+| El carrito **no** reserva stock                                | Reserva es responsabilidad de Inventory al hacer checkout |
+| Un solo carrito activo por usuario                             | Sin multi-carrito en MVP                                  |
+| `Cart` no conoce `Order`                                       | El carrito es pre-orden; no genera órdenes                |
 
 ---
 
@@ -199,11 +199,11 @@ src/modules/02cart/
 
 ## Dependencias entre BCs
 
-| Depende de | Para qué | Dirección |
-|---|---|---|
-| Identity | `JwtAuthGuard`, `@CurrentUser()` para `userId` | Cart → Identity |
-| Catalog | Validar existencia, estado y stock al agregar | Cart → Catalog (vía `ProductCheckerPort`) |
-| — | Ordering consume Cart al hacer checkout | Ordering → Cart (vía puerto o endpoint) |
+| Depende de | Para qué                                       | Dirección                                 |
+| ---------- | ---------------------------------------------- | ----------------------------------------- |
+| Identity   | `JwtAuthGuard`, `@CurrentUser()` para `userId` | Cart → Identity                           |
+| Catalog    | Validar existencia, estado y stock al agregar  | Cart → Catalog (vía `ProductCheckerPort`) |
+| —          | Ordering consume Cart al hacer checkout        | Ordering → Cart (vía puerto o endpoint)   |
 
 **Nota**: hoy `CartModule` importa `CatalogModule` directamente para obtener `ProductCheckerAdapter`. La forma correcta es exponer un puerto desde Cart (`ProductCheckerPort`) e implementar el adapter en Catalog (como ya está), pero **el token debe vivir en `common/` o en Cart**, no en Catalog. Si está en Catalog, el acoplamiento es al revés.
 

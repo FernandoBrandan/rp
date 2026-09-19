@@ -18,8 +18,11 @@
     "noFallthroughCasesInSwitch": false,
     "types": ["jest", "node"],
     "paths": {
+      "@main/*": ["./src/*"],
       "@common/*": ["./src/common/*"],
       "@infra/*": ["./src/infra/*"],
+      "@auth/*": ["./src/modules/00auth/*"],
+      "@user/*": ["./src/modules/00user/*"],
       "@catalog/*": ["./src/modules/01catalog/*"],
       "@cart/*": ["./src/modules/02cart/*"],
       "@order/*": ["./src/modules/03order/*"],

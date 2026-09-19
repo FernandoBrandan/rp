@@ -7,6 +7,8 @@ import {
   ORDER_FINDER,
   ORDER_PAYMENT_STATUS,
 } from '@infra/tokens';
+import { AuthInfraModule } from '@infra/auth-infra/auth-infra.module';
+
 import { CatalogModule } from '@catalog/catalog.module';
 import { OrderController } from './presentation/order.controller';
 import { CreateOrderUseCase } from './application/use-cases/create-order.use-case';
@@ -24,6 +26,7 @@ import { OrderPaymentFailedListener } from './application/listeners/order-paymen
     TypeOrmModule.forFeature([OrderEntity]),
     LoggerModule,
     RedisModule,
+    AuthInfraModule,
     CatalogModule,
   ],
   controllers: [OrderController],

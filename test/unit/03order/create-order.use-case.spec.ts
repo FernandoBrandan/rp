@@ -74,8 +74,9 @@ function makeUseCase(deps: any) {
   );
 }
 
+const USER_ID = 'user-1';
+
 const validDto = {
-  userId: 'user-1',
   idempotencyKey: 'key-1',
   items: [{ productId: 'prod-1', quantity: 2, price: 100 }],
 };
@@ -91,7 +92,7 @@ describe('CreateOrderUseCase', () => {
     });
     const useCase = makeUseCase(deps);
 
-    const result = await useCase.execute(validDto);
+    const result = await useCase.execute(USER_ID, validDto);
 
     expect(result.id).toBe('ORDER-EXISTING');
     expect(deps.stockService.reserveStock).not.toHaveBeenCalled();
@@ -99,7 +100,7 @@ describe('CreateOrderUseCase', () => {
   });
 
   it('lanza 202 si la orden existe pero sin paymentUrl', async () => {
-    const existing = makeOrder('ORDER-EXISTING'); // sin url
+    const existing = makeOrder('ORDER-EXISTING');
     const deps = makeDeps({
       orderRepository: {
         findByIdempotencyKey: jest.fn().mockResolvedValue(existing),
@@ -107,7 +108,9 @@ describe('CreateOrderUseCase', () => {
     });
     const useCase = makeUseCase(deps);
 
-    await expect(useCase.execute(validDto)).rejects.toThrow(HttpException);
+    await expect(useCase.execute(USER_ID, validDto)).rejects.toThrow(
+      HttpException,
+    );
   });
 
   // ─── Happy path ────────────────────────────────────────────────
@@ -115,9 +118,9 @@ describe('CreateOrderUseCase', () => {
     const deps = makeDeps();
     const useCase = makeUseCase(deps);
 
-    const result = await useCase.execute(validDto);
+    const result = await useCase.execute(USER_ID, validDto);
 
-    expect(result.total).toBe(200); // 2 * 100
+    expect(result.total).toBe(200);
     expect(result.status).toBe(OrderStatus.PENDING);
     expect(deps.stockService.reserveStock).toHaveBeenCalledTimes(1);
     expect(deps.orderRepository.createOrder).toHaveBeenCalledTimes(1);
@@ -143,12 +146,12 @@ describe('CreateOrderUseCase', () => {
     });
     const useCase = makeUseCase(deps);
 
-    const result = await useCase.execute({
+    const result = await useCase.execute(USER_ID, {
       ...validDto,
-      items: [{ productId: 'prod-1', quantity: 1, price: 1 }], // cliente dice 1
+      items: [{ productId: 'prod-1', quantity: 1, price: 1 }],
     });
 
-    expect(result.total).toBe(999); // catálogo dice 999
+    expect(result.total).toBe(999);
   });
 
   // ─── Validaciones ──────────────────────────────────────────────
@@ -158,7 +161,9 @@ describe('CreateOrderUseCase', () => {
     });
     const useCase = makeUseCase(deps);
 
-    await expect(useCase.execute(validDto)).rejects.toThrow(HttpException);
+    await expect(useCase.execute(USER_ID, validDto)).rejects.toThrow(
+      HttpException,
+    );
     expect(deps.stockService.reserveStock).not.toHaveBeenCalled();
   });
 
@@ -178,12 +183,12 @@ describe('CreateOrderUseCase', () => {
     });
     const useCase = makeUseCase(deps);
 
-    await expect(useCase.execute(validDto)).rejects.toThrow(
+    await expect(useCase.execute(USER_ID, validDto)).rejects.toThrow(
       BadRequestException,
     );
   });
 
-  // ─── stock insuficiente ──────────────────────────────────────────────
+  // ─── stock insuficiente ─────────────────────────────────────────
   it('lanza BadRequest si no hay stock suficiente', async () => {
     const deps = makeDeps({
       stockService: {
@@ -194,7 +199,7 @@ describe('CreateOrderUseCase', () => {
     });
     const useCase = makeUseCase(deps);
 
-    await expect(useCase.execute(validDto)).rejects.toThrow(
+    await expect(useCase.execute(USER_ID, validDto)).rejects.toThrow(
       BadRequestException,
     );
   });
@@ -209,7 +214,9 @@ describe('CreateOrderUseCase', () => {
     });
     const useCase = makeUseCase(deps);
 
-    await expect(useCase.execute(validDto)).rejects.toThrow(HttpException);
+    await expect(useCase.execute(USER_ID, validDto)).rejects.toThrow(
+      HttpException,
+    );
 
     expect(deps.stockService.releaseReservation).toHaveBeenCalledWith('res-1');
   });

@@ -4,6 +4,8 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { LoggerModule } from '@infra/logger/logger.module';
 import { CART_REPOSITORY } from '@infra/tokens';
+import { AuthInfraModule } from '@infra/auth-infra/auth-infra.module';
+
 import { CatalogModule } from '@catalog/catalog.module';
 import { CartController } from './presentation/cart.controller';
 import { GetCartUseCase } from './application/use-cases/get-cart.use-case';
@@ -17,6 +19,7 @@ import { TypeOrmCartRepository } from './infra/repositories/typeorm-cart.reposit
   imports: [
     TypeOrmModule.forFeature([CartOrmEntity]),
     LoggerModule,
+    AuthInfraModule,
     CatalogModule,
   ],
   controllers: [CartController],

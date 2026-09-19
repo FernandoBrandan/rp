@@ -6,6 +6,7 @@ import {
   Param,
   Post,
   Put,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -14,7 +15,6 @@ import {
   ApiCreatedResponse,
   ApiBadRequestResponse,
   ApiNotFoundResponse,
-  ApiParam,
 } from '@nestjs/swagger';
 
 import { GetCartUseCase } from '../application/use-cases/get-cart.use-case';
@@ -26,6 +26,10 @@ import { AddToCartDTO } from '../application/dto/request/add-to-cart.request.dto
 import { UpdateQuantityDTO } from '../application/dto/request/update-quantity.request.dto';
 import { CartResponseDTO } from '../application/dto/response/cart.response.dto';
 
+import { AuthGuard } from '@infra/auth-infra/guards/jwt-auth.guard';
+import { CurrentUser } from '@infra/auth-infra/decorators/current-user.decorator';
+
+@UseGuards(AuthGuard)
 @ApiTags('cart')
 @Controller('cart')
 export class CartController {
@@ -36,22 +40,17 @@ export class CartController {
     private readonly removeFromCartUC: RemoveFromCartUseCase,
   ) {}
 
-  @Get(':userId')
+  @Get()
   @ApiOperation({ summary: 'Obtener el carrito de un usuario (con precios)' })
-  @ApiParam({
-    name: 'userId',
-    description: 'ID del usuario',
-    example: 'user-123',
-  })
   @ApiOkResponse({
     description: 'Carrito del usuario',
     type: CartResponseDTO,
   })
-  get(@Param('userId') userId: string): Promise<CartResponseDTO> {
+  get(@CurrentUser('sub') userId: string): Promise<CartResponseDTO> {
     return this.getCartUC.execute(userId);
   }
 
-  @Post(':userId')
+  @Post('items')
   @ApiOperation({ summary: 'Agregar un producto al carrito' })
   @ApiCreatedResponse({
     description: 'Producto agregado',
@@ -62,13 +61,13 @@ export class CartController {
   })
   @ApiNotFoundResponse({ description: 'Producto no encontrado' })
   add(
-    @Param('userId') userId: string,
+    @CurrentUser('sub') userId: string,
     @Body() dto: AddToCartDTO,
   ): Promise<CartResponseDTO> {
     return this.addToCartUC.execute(userId, dto);
   }
 
-  @Put(':userId')
+  @Put('items/:productId')
   @ApiOperation({ summary: 'Actualizar la cantidad de un ítem del carrito' })
   @ApiOkResponse({
     description: 'Cantidad actualizada',
@@ -79,13 +78,14 @@ export class CartController {
   })
   @ApiNotFoundResponse({ description: 'Producto o carrito no encontrado' })
   update(
-    @Param('userId') userId: string,
+    @CurrentUser('sub') userId: string,
+    @Param('productId') productId: string,
     @Body() dto: UpdateQuantityDTO,
   ): Promise<CartResponseDTO> {
-    return this.updateQuantityUC.execute(userId, dto);
+    return this.updateQuantityUC.execute(userId, productId, dto);
   }
 
-  @Delete(':userId/:productId')
+  @Delete('items/:productId')
   @ApiOperation({ summary: 'Quitar un producto del carrito' })
   @ApiOkResponse({
     description: 'Producto removido',
@@ -93,7 +93,7 @@ export class CartController {
   })
   @ApiNotFoundResponse({ description: 'Carrito no encontrado' })
   remove(
-    @Param('userId') userId: string,
+    @CurrentUser('sub') userId: string,
     @Param('productId') productId: string,
   ): Promise<CartResponseDTO> {
     return this.removeFromCartUC.execute(userId, productId);

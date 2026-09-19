@@ -6,6 +6,7 @@ import {
   NotFoundException,
   Param,
   Post,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -24,8 +25,11 @@ import { OrderResponseDTO } from '../application/dto/response/order-response.dto
 import { OrderRepository } from '../domain/repositories/order.repository';
 import { ORDER_REPOSITORY } from '@infra/tokens';
 import { OrderMapper } from '../application/mappers/order.mapper';
+import { AuthGuard } from '@infra/auth-infra/guards/jwt-auth.guard';
+import { CurrentUser } from '@infra/auth-infra/decorators/current-user.decorator';
 
 @ApiTags('orders')
+@UseGuards(AuthGuard)
 @Controller('orders')
 export class OrderController {
   constructor(
@@ -51,8 +55,25 @@ export class OrderController {
     description: 'Producto no encontrado, inactivo o stock insuficiente',
   })
   @ApiConflictResponse({ description: 'Idempotency key duplicada en carrera' })
-  async create(@Body() dto: CreateOrderDTO): Promise<OrderResponseDTO> {
-    return this.createOrderUseCase.execute(dto);
+  async create(
+    @CurrentUser('sub') userId: string,
+    @Body() dto: CreateOrderDTO,
+  ): Promise<OrderResponseDTO> {
+    return this.createOrderUseCase.execute(userId, dto);
+  }
+
+  @Get()
+  @ApiOperation({ summary: 'Listar órdenes de un usuario' })
+  @ApiOkResponse({
+    description: 'Listado de órdenes',
+    type: OrderResponseDTO,
+    isArray: true,
+  })
+  async findMyOrders(
+    @CurrentUser('sub') userId: string,
+  ): Promise<OrderResponseDTO[]> {
+    const orders = await this.orderRepository.getOrdersByUser(userId);
+    return orders.map(OrderMapper.toResponse);
   }
 
   @Get(':id')
@@ -62,25 +83,19 @@ export class OrderController {
     type: OrderResponseDTO,
   })
   @ApiNotFoundResponse({ description: 'Orden no encontrada' })
-  async findOne(@Param('id') id: string): Promise<OrderResponseDTO> {
+  async findOne(
+    @CurrentUser('sub') userId: string,
+    @Param('id') id: string,
+  ): Promise<OrderResponseDTO> {
     const order = await this.orderRepository.getOrderDetail(id);
     if (!order) {
       throw new NotFoundException(`Order with id ${id} not found`);
     }
-    return OrderMapper.toResponse(order);
-  }
 
-  @Get('user/:userId')
-  @ApiOperation({ summary: 'Listar órdenes de un usuario' })
-  @ApiOkResponse({
-    description: 'Listado de órdenes',
-    type: OrderResponseDTO,
-    isArray: true,
-  })
-  async findByUser(
-    @Param('userId') userId: string,
-  ): Promise<OrderResponseDTO[]> {
-    const orders = await this.orderRepository.getOrdersByUser(userId);
-    return orders.map(OrderMapper.toResponse);
+    if (order.userId !== userId) {
+      throw new NotFoundException(`Order with id ${id} not found`);
+    }
+
+    return OrderMapper.toResponse(order);
   }
 }

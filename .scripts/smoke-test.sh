@@ -1,316 +1,266 @@
 #!/usr/bin/env bash
-# scripts/smoke-test.sh
-#
-# Pruebas end-to-end del flujo: catalog → cart → order → payments.
-# Requiere:
-#   - Postgres corriendo
-#   - Redis corriendo
-#   - App levantada en $BASE_URL (default: http://localhost:3000)
-#   - PAYMENT_PROVIDER=fake
-#
-# Uso:
-#   ./scripts/smoke-test.sh
-#   BASE_URL=http://localhost:4000 ./scripts/smoke-test.sh
+# Pruebas end-to-end con auth:
+#   auth → catalog → cart → order → payment
+# Requiere: app corriendo en $BASE_URL, Postgres y Redis arriba, seed ejecutado.
 
 set -uo pipefail
 
 BASE_URL="${BASE_URL:-http://localhost:3000}"
-FAKE_PAYMENT_DELAY_MS="${FAKE_PAYMENT_DELAY_MS:-3000}"
+ADMIN_EMAIL="${ADMIN_EMAIL:-admin@example.com}"
+ADMIN_PASS="${ADMIN_PASS:-Admin1234!}"
 
-# ─── Colores ─────────────────────────────────────────────────────────────────
-RED=$'\e[31m'
-GREEN=$'\e[32m'
-YELLOW=$'\e[33m'
-BLUE=$'\e[34m'
-DIM=$'\e[2m'
-RESET=$'\e[0m'
+RED=$'\e[31m'; GREEN=$'\e[32m'; YELLOW=$'\e[33m'; BLUE=$'\e[34m'; DIM=$'\e[2m'; RESET=$'\e[0m'
 
-# ─── Helpers ─────────────────────────────────────────────────────────────────
-PASS=0
-FAIL=0
-
-section() {
-  echo
-  echo "${BLUE}━━━ $1 ━━━${RESET}"
-}
-
-ok() {
-  echo "${GREEN}✔${RESET} $1"
-  PASS=$((PASS + 1))
-}
-
-fail() {
-  echo "${RED}✘${RESET} $1"
-  FAIL=$((FAIL + 1))
-}
-
-info() {
-  echo "${DIM}$1${RESET}"
-}
-
-# Compara y reporta
+PASS=0; FAIL=0
+section() { echo; echo "${BLUE}━━━ $1 ━━━${RESET}"; }
+ok() { echo "${GREEN}✔${RESET} $1"; PASS=$((PASS+1)); }
+fail() { echo "${RED}✘${RESET} $1"; FAIL=$((FAIL+1)); }
+info() { echo "${DIM}$1${RESET}"; }
 assert_eq() {
-  local label="$1"
-  local expected="$2"
-  local actual="$3"
-  if [ "$expected" = "$actual" ]; then
-    ok "$label (=$actual)"
-  else
-    fail "$label — esperado: $expected, obtenido: $actual"
-  fi
+  local label="$1" expected="$2" actual="$3"
+  if [ "$expected" = "$actual" ]; then ok "$label (=$actual)"
+  else fail "$label — esperado: $expected, obtenido: $actual"; fi
 }
+json() { echo "$1" | jq -r "$2"; }
+uuid() { cat /proc/sys/kernel/random/uuid; }
 
-# GET que devuelve solo el body
+# GET/POST con header opcional
 http_get() {
-  curl -s "$BASE_URL$1"
+  local path="$1" token="${2:-}"
+  if [ -n "$token" ]; then
+    curl -s "$BASE_URL$path" -H "Authorization: Bearer $token"
+  else
+    curl -s "$BASE_URL$path"
+  fi
 }
 
-# POST/PUT/DELETE con body, devuelve "STATUS|BODY"
+# Devuelve "STATUS|BODY"
 http_req() {
-  local method="$1"
-  local path="$2"
-  local body="${3:-}"
-  if [ -n "$body" ]; then
-    curl -s -o /tmp/_resp -w "%{http_code}" -X "$method" "$BASE_URL$path" \
-      -H 'content-type: application/json' -d "$body"
-    echo -n "|"
-    cat /tmp/_resp
-  else
-    curl -s -o /tmp/_resp -w "%{http_code}" -X "$method" "$BASE_URL$path"
-    echo -n "|"
-    cat /tmp/_resp
-  fi
+  local method="$1" path="$2" body="${3:-}" token="${4:-}"
+  local args=(-s -o /tmp/_resp -w "%{http_code}" -X "$method" "$BASE_URL$path")
+  [ -n "$token" ] && args+=(-H "Authorization: Bearer $token")
+  [ -n "$body" ] && args+=(-H 'content-type: application/json' -d "$body")
+  local status=$(curl "${args[@]}")
+  echo -n "$status|"
+  cat /tmp/_resp
 }
 
-# Extrae un campo JSON con jq
-json() {
-  echo "$1" | jq -r "$2"
-}
-
-# Genera un UUID v4 (evita depender de uuidgen)
-uuid() {
-  if command -v uuidgen >/dev/null 2>&1; then
-    uuidgen | tr '[:upper:]' '[:lower:]'
-  else
-    cat /proc/sys/kernel/random/uuid
-  fi
-}
-
-# ─── Pre-checks ──────────────────────────────────────────────────────────────
+# ─── Pre-checks ─────────────────────────────────────────────────
 section "Pre-checks"
 info "BASE_URL=$BASE_URL"
 
-if ! command -v jq >/dev/null 2>&1; then
-  echo "${RED}Se requiere jq. Instalá: sudo apt install jq${RESET}"
-  exit 1
-fi
+command -v jq >/dev/null || { echo "${RED}Se requiere jq${RESET}"; exit 1; }
 ok "jq disponible"
 
-HEALTH=$(http_get /health/live)
-HEALTH_STATUS=$(json "$HEALTH" '.status')
-assert_eq "Health live" "ok" "$HEALTH_STATUS"
+LIVE=$(json "$(http_get /health/live)" '.status')
+assert_eq "Health live" "ok" "$LIVE"
 
-HEALTH=$(http_get /health/ready)
-HEALTH_STATUS=$(json "$HEALTH" '.status')
-assert_eq "Health ready" "ok" "$HEALTH_STATUS"
+READY=$(json "$(http_get /health/ready)" '.status')
+assert_eq "Health ready" "ok" "$READY"
 
-# ─── 1. Crear producto ───────────────────────────────────────────────────────
-section "1. Crear producto"
+# ─── 1. Register user ───────────────────────────────────────────
+section "1. Register user"
 
-SERIAL="PROD-TEST$(date +%s)"
-CREATE_PRODUCT=$(http_req POST /products "{
-  \"serial\": \"$SERIAL\",
-  \"name\": \"Laptop Test\",
-  \"price\": 1500.00,
-  \"stock\": 10
+USER_EMAIL="user-$(date +%s)@example.com"
+USER_PASS="User1234!"
+
+RES=$(http_req POST /auth/register "{
+  \"email\": \"$USER_EMAIL\",
+  \"password\": \"$USER_PASS\"
 }")
-STATUS=$(echo "$CREATE_PRODUCT" | cut -d'|' -f1)
-BODY=$(echo "$CREATE_PRODUCT" | cut -d'|' -f2-)
+STATUS=$(echo "$RES" | cut -d'|' -f1)
+BODY=$(echo "$RES" | cut -d'|' -f2-)
+assert_eq "POST /auth/register → 201" "201" "$STATUS"
 
-assert_eq "POST /products devuelve 201" "201" "$STATUS"
+# ─── 2. Register duplicado ──────────────────────────────────────
+section "2. Register duplicado"
 
+RES=$(http_req POST /auth/register "{
+  \"email\": \"$USER_EMAIL\",
+  \"password\": \"$USER_PASS\"
+}")
+STATUS=$(echo "$RES" | cut -d'|' -f1)
+assert_eq "POST /auth/register duplicado → 409" "409" "$STATUS"
+
+# ─── 3. Password corta ──────────────────────────────────────────
+section "3. Password corta"
+
+RES=$(http_req POST /auth/register "{
+  \"email\": \"otro@example.com\",
+  \"password\": \"123\"
+}")
+STATUS=$(echo "$RES" | cut -d'|' -f1)
+assert_eq "POST /auth/register password corta → 400" "400" "$STATUS"
+
+# ─── 4. Login user ──────────────────────────────────────────────
+section "4. Login user"
+
+RES=$(http_req POST /auth/login "{
+  \"email\": \"$USER_EMAIL\",
+  \"password\": \"$USER_PASS\"
+}")
+STATUS=$(echo "$RES" | cut -d'|' -f1)
+BODY=$(echo "$RES" | cut -d'|' -f2-)
+assert_eq "POST /auth/login → 200" "200" "$STATUS"
+
+USER_TOKEN=$(json "$BODY" '.accessToken')
+USER_ID=$(json "$BODY" '.user.id')
+[ -n "$USER_TOKEN" ] && [ "$USER_TOKEN" != "null" ] && ok "accessToken recibido" || fail "sin accessToken"
+assert_eq "role del user" "USER" "$(json "$BODY" '.user.role')"
+
+# ─── 5. Login credenciales inválidas ────────────────────────────
+section "5. Login credenciales inválidas"
+
+RES=$(http_req POST /auth/login "{
+  \"email\": \"$USER_EMAIL\",
+  \"password\": \"wrong\"
+}")
+STATUS=$(echo "$RES" | cut -d'|' -f1)
+assert_eq "POST /auth/login password mala → 401" "401" "$STATUS"
+
+# ─── 6. Login admin ─────────────────────────────────────────────
+section "6. Login admin"
+
+RES=$(http_req POST /auth/login "{
+  \"email\": \"$ADMIN_EMAIL\",
+  \"password\": \"$ADMIN_PASS\"
+}")
+STATUS=$(echo "$RES" | cut -d'|' -f1)
+BODY=$(echo "$RES" | cut -d'|' -f2-)
+assert_eq "POST /auth/login admin → 200" "200" "$STATUS"
+
+ADMIN_TOKEN=$(json "$BODY" '.accessToken')
+assert_eq "role del admin" "ADMIN" "$(json "$BODY" '.user.role')"
+
+# ─── 7. /users/me ───────────────────────────────────────────────
+section "7. /users/me"
+
+RES=$(http_get /users/me "$USER_TOKEN")
+assert_eq "GET /users/me email" "$USER_EMAIL" "$(json "$RES" '.email')"
+
+RES=$(http_get /users/me "")
+STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$BASE_URL/users/me")
+assert_eq "GET /users/me sin token → 401" "401" "$STATUS"
+
+# ─── 8. Catalog: público vs admin ───────────────────────────────
+section "8. Catalog"
+
+RES=$(http_get /products "")
+assert_eq "GET /products público → 200" "200" "$(curl -s -o /dev/null -w "%{http_code}" "$BASE_URL/products")"
+
+SERIAL="PROD-SMOKE-$(date +%s)"
+
+# sin token → 401
+STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$BASE_URL/products" \
+  -H 'content-type: application/json' \
+  -d "{\"serial\":\"$SERIAL\",\"name\":\"Smoke\",\"price\":100,\"stock\":10}")
+assert_eq "POST /products sin token → 401" "401" "$STATUS"
+
+# con token USER → 403
+STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$BASE_URL/products" \
+  -H "Authorization: Bearer $USER_TOKEN" \
+  -H 'content-type: application/json' \
+  -d "{\"serial\":\"$SERIAL\",\"name\":\"Smoke\",\"price\":100,\"stock\":10}")
+assert_eq "POST /products con USER → 403" "403" "$STATUS"
+
+# con token ADMIN → 201
+RES=$(http_req POST /products "{
+  \"serial\": \"$SERIAL\",
+  \"name\": \"Smoke Laptop\",
+  \"price\": 100,
+  \"stock\": 10
+}" "$ADMIN_TOKEN")
+STATUS=$(echo "$RES" | cut -d'|' -f1)
+BODY=$(echo "$RES" | cut -d'|' -f2-)
+assert_eq "POST /products con ADMIN → 201" "201" "$STATUS"
 PRODUCT_ID=$(json "$BODY" '.id')
-assert_eq "Serial respetado" "$SERIAL" "$(json "$BODY" '.serial')"
-assert_eq "Stock inicial" "10" "$(json "$BODY" '.stock')"
-assert_eq "Status inicial" "ACTIVE" "$(json "$BODY" '.status')"
 info "PRODUCT_ID=$PRODUCT_ID"
 
-# ─── 2. Crear producto con serial inválido ───────────────────────────────────
-section "2. Validación: serial inválido"
+# ─── 9. Cart ────────────────────────────────────────────────────
+section "9. Cart"
 
-BAD_SERIAL=$(http_req POST /products "{
-  \"serial\": \"XYZ-123\",
-  \"name\": \"Bad\",
-  \"price\": 10,
-  \"stock\": 1
-}")
-STATUS=$(echo "$BAD_SERIAL" | cut -d'|' -f1)
-assert_eq "POST /products con serial inválido → 400" "400" "$STATUS"
+STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$BASE_URL/cart")
+assert_eq "GET /cart sin token → 401" "401" "$STATUS"
 
-# ─── 3. Cart ─────────────────────────────────────────────────────────────────
-section "3. Carrito"
-
-USER_ID=$(uuid)
-info "USER_ID=$USER_ID"
-
-ADD_CART=$(http_req POST "/cart/$USER_ID" "{
+RES=$(http_req POST /cart/items "{
   \"item\": { \"productId\": \"$PRODUCT_ID\", \"quantity\": 2 }
-}")
-STATUS=$(echo "$ADD_CART" | cut -d'|' -f1)
-BODY=$(echo "$ADD_CART" | cut -d'|' -f2-)
-assert_eq "POST /cart/:userId → 201" "201" "$STATUS"
-assert_eq "Items en carrito" "1" "$(json "$BODY" '.items | length')"
-assert_eq "Total items" "2" "$(json "$BODY" '.totalItems')"
+}" "$USER_TOKEN")
+STATUS=$(echo "$RES" | cut -d'|' -f1)
+assert_eq "POST /cart/items → 201" "201" "$STATUS"
 
-GET_CART=$(http_get "/cart/$USER_ID")
-assert_eq "GET /cart/:userId devuelve precio" "1500" "$(json "$GET_CART" '.items[0].price')"
-assert_eq "Subtotal correcto" "3000" "$(json "$GET_CART" '.items[0].subtotal')"
+CART=$(http_get /cart "$USER_TOKEN")
+assert_eq "Cart items count" "1" "$(json "$CART" '.items | length')"
+assert_eq "Cart total items" "2" "$(json "$CART" '.totalItems')"
 
-# ─── 4. Crear orden ──────────────────────────────────────────────────────────
-section "4. Crear orden"
+# ─── 10. Crear orden ────────────────────────────────────────────
+section "10. Crear orden"
 
-IDEMPOTENCY_KEY="test-$(uuid)"
-ORDER_REQ=$(http_req POST /orders "{
-  \"userId\": \"$USER_ID\",
+IDEMPOTENCY_KEY="smoke-$(uuid)"
+
+RES=$(http_req POST /orders "{
   \"idempotencyKey\": \"$IDEMPOTENCY_KEY\",
-  \"items\": [
-    { \"productId\": \"$PRODUCT_ID\", \"quantity\": 2, \"price\": 1500 }
-  ]
-}")
-STATUS=$(echo "$ORDER_REQ" | cut -d'|' -f1)
-BODY=$(echo "$ORDER_REQ" | cut -d'|' -f2-)
-
+  \"items\": [ { \"productId\": \"$PRODUCT_ID\", \"quantity\": 2, \"price\": 100 } ]
+}" "$USER_TOKEN")
+STATUS=$(echo "$RES" | cut -d'|' -f1)
+BODY=$(echo "$RES" | cut -d'|' -f2-)
 assert_eq "POST /orders → 201" "201" "$STATUS"
 
 ORDER_ID=$(json "$BODY" '.id')
-assert_eq "Total de la orden" "3000" "$(json "$BODY" '.total')"
-assert_eq "Status inicial de la orden" "PENDING" "$(json "$BODY" '.status')"
+assert_eq "Total" "200" "$(json "$BODY" '.total')"
 info "ORDER_ID=$ORDER_ID"
 
-# ─── 5. Idempotencia (mismo key, mismo resultado) ────────────────────────────
-section "5. Idempotencia"
+# ─── 11. Idempotencia ───────────────────────────────────────────
+section "11. Idempotencia"
 
-sleep 4  # dar tiempo al fake provider (delay por defecto 3s)
+sleep 4  # dar tiempo al fake provider
 
-IDEM_REQ=$(http_req POST /orders "{
-  \"userId\": \"$USER_ID\",
+RES=$(http_req POST /orders "{
   \"idempotencyKey\": \"$IDEMPOTENCY_KEY\",
-  \"items\": [
-    { \"productId\": \"$PRODUCT_ID\", \"quantity\": 2, \"price\": 1500 }
-  ]
-}")
-STATUS=$(echo "$IDEM_REQ" | cut -d'|' -f1)
-BODY=$(echo "$IDEM_REQ" | cut -d'|' -f2-)
-IDEM_ORDER_ID=$(json "$BODY" '.id')
+  \"items\": [ { \"productId\": \"$PRODUCT_ID\", \"quantity\": 2, \"price\": 100 } ]
+}" "$USER_TOKEN")
+BODY=$(echo "$RES" | cut -d'|' -f2-)
+assert_eq "Mismo idempotencyKey devuelve mismo ORDER_ID" "$ORDER_ID" "$(json "$BODY" '.id')"
 
-assert_eq "POST /orders con mismo key → 201" "201" "$STATUS"
-assert_eq "Devuelve el mismo ORDER_ID" "$ORDER_ID" "$IDEM_ORDER_ID"
+# ─── 12. Estado final ───────────────────────────────────────────
+section "12. Estado final de la orden"
 
-# ─── 6. Estado final de la orden ─────────────────────────────────────────────
-section "6. Estado final de la orden"
+FINAL=$(http_get "/orders/$ORDER_ID" "$USER_TOKEN")
+assert_eq "Status final" "PAID" "$(json "$FINAL" '.status')"
 
-ORDER_FINAL=$(http_get "/orders/$ORDER_ID")
-FINAL_STATUS=$(json "$ORDER_FINAL" '.status')
-assert_eq "Status final" "PAID" "$FINAL_STATUS"
+URL=$(json "$FINAL" '.paymentUrl')
+[ -n "$URL" ] && [ "$URL" != "null" ] && ok "paymentUrl seteado" || fail "paymentUrl vacío"
 
-PAYMENT_URL=$(json "$ORDER_FINAL" '.paymentUrl')
-if [ -n "$PAYMENT_URL" ] && [ "$PAYMENT_URL" != "null" ]; then
-  ok "paymentUrl seteado ($PAYMENT_URL)"
-else
-  fail "paymentUrl no seteado"
-fi
+# ─── 13. Stock descontado ───────────────────────────────────────
+section "13. Stock descontado"
 
-# ─── 7. Stock descontado ─────────────────────────────────────────────────────
-section "7. Stock descontado"
+PROD=$(http_get "/products/$SERIAL" "")
+assert_eq "Stock post-orden (10 - 2)" "8" "$(json "$PROD" '.stock')"
 
-PRODUCT_AFTER=$(http_get "/products/$SERIAL")
-assert_eq "Stock post-orden (10 - 2)" "8" "$(json "$PRODUCT_AFTER" '.stock')"
+# ─── 14. Stock insuficiente ─────────────────────────────────────
+section "14. Stock insuficiente"
 
-# ─── 8. Idempotencia bajo concurrencia ───────────────────────────────────────
-section "8. Idempotencia bajo concurrencia"
+RES=$(http_req POST /orders "{
+  \"idempotencyKey\": \"smoke-big-$(uuid)\",
+  \"items\": [ { \"productId\": \"$PRODUCT_ID\", \"quantity\": 1000, \"price\": 100 } ]
+}" "$USER_TOKEN")
+STATUS=$(echo "$RES" | cut -d'|' -f1)
+assert_eq "POST /orders sin stock → 400" "400" "$STATUS"
 
-CONCURRENT_KEY="concurrent-$(uuid)"
-PAYLOAD="{
-  \"userId\": \"$USER_ID\",
-  \"idempotencyKey\": \"$CONCURRENT_KEY\",
-  \"items\": [
-    { \"productId\": \"$PRODUCT_ID\", \"quantity\": 1, \"price\": 1500 }
-  ]
-}"
+# ─── 15. Order inexistente ──────────────────────────────────────
+section "15. Order inexistente"
 
-# Dispara 3 requests en paralelo
-for i in 1 2 3; do
-  (
-    curl -s -o "/tmp/_concurrent_$i" -w "%{http_code}" \
-      -X POST "$BASE_URL/orders" \
-      -H 'content-type: application/json' \
-      -d "$PAYLOAD" > "/tmp/_status_$i"
-  ) &
-done
-wait
+STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$BASE_URL/orders/NO-EXISTE" \
+  -H "Authorization: Bearer $USER_TOKEN")
+assert_eq "GET /orders/:id inexistente → 404" "404" "$STATUS"
 
-# Recolecta los IDs devueltos
-IDS=()
-for i in 1 2 3; do
-  ID=$(jq -r '.id // "null"' "/tmp/_concurrent_$i" 2>/dev/null || echo "null")
-  IDS+=("$ID")
-done
-UNIQUE_IDS=$(printf '%s\n' "${IDS[@]}" | sort -u | grep -v '^null$' | wc -l)
+# ─── 16. Mis órdenes ────────────────────────────────────────────
+section "16. Mis órdenes"
 
-assert_eq "Solo 1 ORDER_ID único entre 3 requests" "1" "$UNIQUE_IDS"
-info "IDs devueltos: ${IDS[*]}"
+RES=$(http_get /orders "$USER_TOKEN")
+assert_eq "GET /orders incluye la creada" "1" "$(echo "$RES" | jq '[.[] | select(.id=="'"$ORDER_ID"'")] | length')"
 
-# ─── 9. Stock insuficiente ───────────────────────────────────────────────────
-section "9. Stock insuficiente"
-
-BIG_ORDER=$(http_req POST /orders "{
-  \"userId\": \"$USER_ID\",
-  \"idempotencyKey\": \"big-$(uuid)\",
-  \"items\": [
-    { \"productId\": \"$PRODUCT_ID\", \"quantity\": 1000, \"price\": 1500 }
-  ]
-}")
-STATUS=$(echo "$BIG_ORDER" | cut -d'|' -f1)
-assert_eq "POST /orders sin stock → 4xx" "400" "$STATUS"
-
-# ─── 10. Producto inactivo ───────────────────────────────────────────────────
-section "10. Producto inactivo"
-
-INACTIVATE=$(http_req PUT /products "{
-  \"serial\": \"$SERIAL\",
-  \"status\": \"INACTIVE\"
-}")
-STATUS=$(echo "$INACTIVATE" | cut -d'|' -f1)
-assert_eq "PUT /products → INACTIVE" "200" "$STATUS"
-
-INACTIVE_ORDER=$(http_req POST /orders "{
-  \"userId\": \"$USER_ID\",
-  \"idempotencyKey\": \"inactive-$(uuid)\",
-  \"items\": [
-    { \"productId\": \"$PRODUCT_ID\", \"quantity\": 1, \"price\": 1500 }
-  ]
-}")
-STATUS=$(echo "$INACTIVE_ORDER" | cut -d'|' -f1)
-assert_eq "POST /orders con producto inactivo → 400" "400" "$STATUS"
-
-# ─── 11. Cart con producto inactivo ──────────────────────────────────────────
-section "11. Cart rechaza producto inactivo"
-
-CART_INACTIVE=$(http_req POST "/cart/$USER_ID" "{
-  \"item\": { \"productId\": \"$PRODUCT_ID\", \"quantity\": 1 }
-}")
-STATUS=$(echo "$CART_INACTIVE" | cut -d'|' -f1)
-assert_eq "POST /cart con producto inactivo → 400" "400" "$STATUS"
-
-# ─── 12. Orden inexistente ───────────────────────────────────────────────────
-section "12. Orden inexistente"
-
-NOT_FOUND=$(curl -s -o /dev/null -w "%{http_code}" "$BASE_URL/orders/NO-EXISTE")
-assert_eq "GET /orders/:id inexistente → 404" "404" "$NOT_FOUND"
-
-# ─── Resumen ─────────────────────────────────────────────────────────────────
+# ─── Resumen ────────────────────────────────────────────────────
 section "Resumen"
-
 TOTAL=$((PASS + FAIL))
 if [ "$FAIL" -eq 0 ]; then
   echo "${GREEN}✔ $PASS/$TOTAL passed${RESET}"

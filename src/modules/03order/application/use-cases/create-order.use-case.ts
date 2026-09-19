@@ -52,10 +52,13 @@ export class CreateOrderUseCase {
     private readonly logger: Logger,
   ) {}
 
-  async execute(dto: CreateOrderDTO): Promise<OrderResponseDTO> {
+  async execute(
+    userId: string,
+    dto: CreateOrderDTO,
+  ): Promise<OrderResponseDTO> {
     this.logger.info('Create Order', {
       idempotencyKey: dto.idempotencyKey,
-      userId: dto.userId,
+      userId: userId,
     });
 
     // Idempotencia
@@ -108,7 +111,7 @@ export class CreateOrderUseCase {
 
     const order = Order.create({
       id: orderId,
-      userId: dto.userId,
+      userId: userId,
       idempotencyKey: dto.idempotencyKey,
       items,
       reservationId,
@@ -150,7 +153,7 @@ export class CreateOrderUseCase {
     this.logger.info('Order Created', {
       orderId: order.id,
       idempotencyKey: dto.idempotencyKey,
-      userId: dto.userId,
+      userId: userId,
     });
 
     return OrderMapper.toResponse(order);

@@ -19,10 +19,13 @@ import { ProductCheckerAdapter } from './infra/adapters/product-checker.adapter'
 import { ProductFinderAdapter } from './infra/adapters/product-finder.adapter';
 import { StockReservationAdapter } from './infra/adapters/stock-reservation.adapter';
 
+import { AuthInfraModule } from '@infra/auth-infra/auth-infra.module';
+
 @Module({
   imports: [
     TypeOrmModule.forFeature([ProductEntity, StockReservationEntity]),
     LoggerModule,
+    AuthInfraModule,
   ],
   controllers: [CatalogController],
   providers: [
