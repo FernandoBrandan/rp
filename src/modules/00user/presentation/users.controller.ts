@@ -14,9 +14,9 @@ import { CurrentUser } from '@infra/auth-infra/decorators/current-user.decorator
 import { GetProfileUseCase } from '../application/use-cases/get-profile.use-case';
 import { UserResponseDTO } from '../application/dto/response/user.response.dto';
 
-@ApiTags('users')
+@ApiTags('user')
 @ApiBearerAuth()
-@Controller('users')
+@Controller('user')
 @UseGuards(AuthGuard)
 export class UsersController {
   constructor(private readonly getProfile: GetProfileUseCase) {}

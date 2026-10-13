@@ -3,15 +3,7 @@
 ## Decisión de diseño
 
 - Un solo `User` con roles `USER` | `ADMIN`.
-- No separar auth-users de shopping-users.
-
-Separar solo tiene sentido si:
-
-- Multi-tenant complejo
-- Dominios radicalmente distintos
-- Auth es un servicio independiente
-
-Para este MVP: no aplica.
+- Auth es un servicio independiente.
 
 ---
 
@@ -42,14 +34,14 @@ Los endpoints protegidos validan ese token.
 
 - `POST /auth/register`
 - `POST /auth/login`
-- `GET /auth/me`
+- `GET /user/me` : Usermodule
 
 ### Seguridad
 
 - `JwtAuthGuard` — protege endpoints autenticados
 - `ValidationPipe` sobre DTOs de auth (`RegisterDTO`, `LoginDTO`)
 
-**Exit criteria**: `POST /auth/register` + `POST /auth/login` funcionan, y un endpoint protegido con `@UseGuards(JwtAuthGuard)` rechaza requests sin token válido.a
+**NOTA**: `POST /auth/register` + `POST /auth/login` funcionan, y un endpoint protegido con `@UseGuards(JwtAuthGuard)` rechaza requests sin token válido.a
 
 ---
 
@@ -113,33 +105,6 @@ Los endpoints protegidos validan ese token.
 | Guards aplicados a nivel controller, no método | Menos superficie de olvido             |
 
 ---
-
-## Estructura de archivos objetivo
-
-```
-src/modules/00identity/
-├── application/
-│   ├── dto/request/         register, login, refresh
-│   ├── dto/response/        auth.response, user.response
-│   ├── mappers/             user.mapper
-│   ├── ports/               password-hasher.port, token-service.port
-│   └── use-cases/           register, login, refresh, get-current-user
-├── domain/
-│   ├── enums/               userRole.enum
-│   ├── value-objects/       email.vo, passwordHash.vo
-│   ├── user.entity.ts
-│   └── repositories/        user.repository
-├── infra/
-│   ├── adapters/            bcrypt-hasher, jwt-token
-│   ├── persistence/         user.orm-entity, user.orm.mapper
-│   ├── repositories/        typeorm-user.repository
-│   └── strategies/          jwt.strategy
-├── presentation/
-│   ├── auth.controller.ts
-│   └── guards/              jwt-auth.guard, roles.guard
-├── decorators/              roles.decorator, current-user.decorator
-└── identity.module.ts
-```
 
 **MVP** construye: dominio completo, `register` + `login` use cases, `bcrypt-hasher`, `jwt-token`, `jwt-auth.guard`.
 **v2** agrega: `refresh` use case, `get-current-user`, `roles.guard`, `roles.decorator`, `current-user.decorator`.
