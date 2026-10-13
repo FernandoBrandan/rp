@@ -32,13 +32,33 @@ export class LoginUseCase {
     this.logger.info('Login attempt', { email })
 
     const user = await this.userFinder.findByEmail(email)
+
+    if (!user) {
+      this.logger.warn('Login failed', { email, reason: 'user_not_found' })
+      throw new UnauthorizedException('Invalid credentials')
+    }
+
     const isValid = await this.hashService.compare(dto.password, user.passwordHash)
 
-    if (!user || !isValid) throw new UnauthorizedException('Invalid credentials')
+    if (!isValid) {
+      this.logger.warn('Login failed', { email, reason: 'bad_password' })
+      throw new UnauthorizedException('Invalid credentials')
+    }
 
-    const accessToken = this.jwtService.sign({ sub: user.id, role: user.role })
+    const accessToken = this.jwtService.sign({
+      sub: user.id,
+      role: user.role,
+    })
+
     this.logger.info('Login success', { userId: user.id })
 
-    return { accessToken, user: { id: user.id, email: user.email, role: user.role as UserRole } }
+    return {
+      accessToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role as UserRole,
+      },
+    }
   }
 }

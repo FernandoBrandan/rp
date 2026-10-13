@@ -1,37 +1,28 @@
-import { Order } from '@order/domain/order.entity';
-import { Money } from '@common/domain/value-objects/money.vo';
-import { OrderItem } from '@order/domain/value-objects/orderItem.vo';
-import { OrderStatus } from '@order/domain/enums/orderStatus.enum';
-import { PaymentStatus } from '@order/domain/enums/paymentStatus.enum';
-import { OrderEntity } from './order.orm-entity';
+import { Order } from '@order/domain/order.entity'
+import { Money } from '@common/domain/value-objects/money.vo'
+import { OrderItem } from '@order/domain/value-objects/orderItem.vo'
+import { OrderStatus } from '@order/domain/enums/orderStatus.enum'
+import { PaymentStatus } from '@order/domain/enums/paymentStatus.enum'
+import { OrderEntity } from './order.orm-entity'
 
 export class OrderOrmMapper {
   static toDomain(orm: OrderEntity): Order {
-    const statusMap: Record<string, OrderStatus> = {
-      PENDING: OrderStatus.PENDING,
-      PAID: OrderStatus.PAID,
-      COMPLETED: OrderStatus.COMPLETED,
-      WAITING_PAYMENT: OrderStatus.WAITING_PAYMENT,
-      FAILED: OrderStatus.FAILED,
-      CANCELLED: OrderStatus.CANCELLED,
-    };
-
-    const status = statusMap[orm.status] || OrderStatus.PENDING;
+    const status = orm.status as OrderStatus
+    if (!Object.values(OrderStatus).includes(status)) {
+      throw new Error(`Unknown order status in DB: ${orm.status}`)
+    }
 
     return new Order(
       orm.id,
       orm.userId,
       orm.idempotencyKey,
-      orm.items.map(
-        (item) =>
-          new OrderItem(item.productId, item.quantity, new Money(item.price)),
-      ),
+      orm.items.map((item) => new OrderItem(item.productId, item.quantity, new Money(item.price))),
       new Money(orm.total),
       status,
       orm.reservationId,
       orm.paymentStatus as PaymentStatus,
       orm.paymentUrl,
-    );
+    )
   }
 
   static toPersistence(domain: Order): Partial<OrderEntity> {
@@ -49,6 +40,6 @@ export class OrderOrmMapper {
       reservationId: domain.reservationId,
       paymentStatus: domain.paymentStatus,
       paymentUrl: domain.paymentUrl,
-    };
+    }
   }
 }
