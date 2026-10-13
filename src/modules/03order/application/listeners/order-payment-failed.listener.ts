@@ -19,10 +19,14 @@ export class OrderPaymentFailedListener {
   @OnEvent(EventNames.ORDER_PAYMENT_FAILED)
   async handle(event: OrderPaymentFailedEvent) {
     const order = await this.orderRepository.getOrderDetail(event.orderId);
-    if (order && order.reservationId) {
+    if (!order) return;
+
+    if (order.reservationId) {
       await this.stockService.releaseReservation(order.reservationId);
-      order.fail();
-      await this.orderRepository.update(order);
     }
+
+    order.fail();
+    await this.orderRepository.update(order);
+    this.logger.info('Order marked as failed', { orderId: event.orderId });
   }
 }

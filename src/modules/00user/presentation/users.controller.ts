@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get, UseGuards } from '@nestjs/common'
 import {
   ApiTags,
   ApiOperation,
@@ -6,15 +6,15 @@ import {
   ApiBearerAuth,
   ApiUnauthorizedResponse,
   ApiNotFoundResponse,
-} from '@nestjs/swagger';
+} from '@nestjs/swagger'
 
-import { AuthGuard } from '@infra/auth-infra/guards/jwt-auth.guard';
-import { CurrentUser } from '@infra/auth-infra/decorators/current-user.decorator';
+import { AuthGuard } from '@infra/auth-infra/guards/jwt-auth.guard'
+import { CurrentUser } from '@infra/auth-infra/decorators/current-user.decorator'
 
-import { GetProfileUseCase } from '../application/use-cases/get-profile.use-case';
-import { UserResponseDTO } from '../application/dto/response/user.response.dto';
+import { GetProfileUseCase } from '../application/use-cases/get-profile.use-case'
+import { UserResponseDTO } from '../application/dto/response/user.response.dto'
 
-@ApiTags('user')
+@ApiTags('users')
 @ApiBearerAuth()
 @Controller('user')
 @UseGuards(AuthGuard)
@@ -27,6 +27,6 @@ export class UsersController {
   @ApiUnauthorizedResponse({ description: 'Token faltante o inválido' })
   @ApiNotFoundResponse({ description: 'Usuario no encontrado' })
   me(@CurrentUser('sub') userId: string): Promise<UserResponseDTO> {
-    return this.getProfile.execute(userId);
+    return this.getProfile.execute(userId)
   }
 }

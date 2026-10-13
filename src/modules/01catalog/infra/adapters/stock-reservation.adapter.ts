@@ -57,9 +57,22 @@ export class StockReservationAdapter implements StockPort {
     await this.dataSource.transaction(async (manager) => {
       const reservation = await manager.findOne(StockReservationEntity, {
         where: { id: reservationId, status: 'RESERVED' },
+        lock: { mode: 'pessimistic_write' },
       });
+
       if (!reservation)
         throw new Error(`Reservation ${reservationId} not found`);
+
+      if (reservation.status === 'CONFIRMED') {
+        this.logger.info('Reservation already confirmed, skipping', {
+          reservationId,
+        });
+        return;
+      }
+
+      if (reservation.status === 'RELEASED')
+        throw new Error(`Cannot confirm released reservation ${reservationId}`);
+
       reservation.status = 'CONFIRMED';
       await manager.save(reservation);
       this.logger.info('Stock confirmed', { reservationId });
@@ -70,9 +83,23 @@ export class StockReservationAdapter implements StockPort {
     await this.dataSource.transaction(async (manager) => {
       const reservation = await manager.findOne(StockReservationEntity, {
         where: { id: reservationId, status: 'RESERVED' },
+        lock: { mode: 'pessimistic_write' },
       });
+
       if (!reservation)
         throw new Error(`Reservation ${reservationId} not found`);
+      if (reservation.status === 'RELEASED') {
+        this.logger.info('Reservation already released, skipping', {
+          reservationId,
+        });
+        return;
+      }
+
+      if (reservation.status === 'CONFIRMED')
+        throw new Error(
+          `Cannot release confirmed reservation ${reservationId}`,
+        );
+
       for (const item of reservation.items) {
         await manager
           .createQueryBuilder()

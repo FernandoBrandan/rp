@@ -1,11 +1,11 @@
-import { UserRole } from '@common/user-role.enum';
-import { Email } from './value-objects/email.vo';
+import { UserRole } from '@common/user-role.enum'
+import { Email } from './value-objects/email.vo'
 
 interface IUser {
-  id: string;
-  email: Email;
-  passwordHash: string;
-  role: UserRole;
+  id: string
+  email: Email
+  passwordHash: string
+  role: UserRole
 }
 
 export class User implements IUser {
@@ -17,21 +17,20 @@ export class User implements IUser {
   ) {}
 
   changeEmail(newEmail: Email) {
-    this.email = newEmail;
+    this.email = newEmail
   }
 
   changePassword(newPasswordHash: string): void {
-    if (!newPasswordHash || newPasswordHash.trim().length === 0) {
-      throw new Error('Password hash cannot be empty');
-    }
-    this.passwordHash = newPasswordHash;
+    if (!newPasswordHash || newPasswordHash.trim().length === 0)
+      throw new Error('Password hash cannot be empty')
+    this.passwordHash = newPasswordHash
   }
 
   changeRole(newRole: UserRole) {
-    this.role = newRole;
+    this.role = newRole
   }
 
   isAdmin(): boolean {
-    return this.role === UserRole.ADMIN;
+    return this.role === UserRole.ADMIN
   }
 }

@@ -60,12 +60,14 @@ export class Order implements IOrder {
   }
 
   pay() {
+    if (this.status === OrderStatus.PAID) return;
+
     if (
       this.status !== OrderStatus.PENDING &&
       this.status !== OrderStatus.WAITING_PAYMENT
-    ) {
+    )
       throw new Error('Only pending or waiting payment orders can be paid');
-    }
+
     this.status = OrderStatus.PAID;
     this.paymentStatus = PaymentStatus.READY;
   }
@@ -77,14 +79,17 @@ export class Order implements IOrder {
   }
 
   fail() {
+    if (this.status === OrderStatus.FAILED) return;
+
     if (
       this.status !== OrderStatus.PENDING &&
       this.status !== OrderStatus.WAITING_PAYMENT
-    )
+    ) {
       throw new Error('Only pending or waiting payment orders can fail');
+    }
+
     this.status = OrderStatus.FAILED;
   }
-
   completeOrder() {
     if (this.status !== OrderStatus.PAID)
       throw new Error('Only paid orders can be completed');

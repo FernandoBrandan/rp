@@ -157,8 +157,10 @@ describe('StockReservationAdapter (integration)', () => {
     );
 
     await adapter.releaseReservation(id);
+    await adapter.releaseReservation(id);
 
-    await expect(adapter.releaseReservation(id)).rejects.toThrow();
+    expect(await getReservationStatus(id)).toBe('RELEASED');
+    expect(await getStock('prod-1')).toBe(10);
   });
 
   it('releaseReservation no libera dos veces (no duplica stock)', async () => {
@@ -172,6 +174,33 @@ describe('StockReservationAdapter (integration)', () => {
     await expect(adapter.releaseReservation(id)).rejects.toThrow();
 
     // Sin el segundo release, el stock debe ser 10, no 13
+    expect(await getStock('prod-1')).toBe(10);
+  });
+
+  it('confirmReservation es idempotente si ya está CONFIRMED', async () => {
+    await insertProduct('prod-1', 10);
+    const id = await adapter.reserveStock(
+      [{ productId: 'prod-1', quantity: 3 }],
+      'ORDER-1',
+    );
+
+    await adapter.confirmReservation(id);
+    await adapter.confirmReservation(id);
+
+    expect(await getReservationStatus(id)).toBe('CONFIRMED');
+    expect(await getStock('prod-1')).toBe(7);
+  });
+
+  it('releaseReservation no duplica stock en retry', async () => {
+    await insertProduct('prod-1', 10);
+    const id = await adapter.reserveStock(
+      [{ productId: 'prod-1', quantity: 3 }],
+      'ORDER-1',
+    );
+
+    await adapter.releaseReservation(id);
+    await adapter.releaseReservation(id);
+
     expect(await getStock('prod-1')).toBe(10);
   });
 });

@@ -1,12 +1,12 @@
-import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { JwtModule, JwtService } from '@nestjs/jwt';
+import { Module } from '@nestjs/common'
+import { ConfigModule, ConfigService } from '@nestjs/config'
+import { JwtModule, JwtService } from '@nestjs/jwt'
 
-import { HASH_SERVICE, JWT_SERVICE } from '@infra/tokens';
+import { HASH_SERVICE, JWT_SERVICE } from '@infra/tokens'
 
-import { PasswordHasher } from './services/password-hasher.service';
-import { AuthGuard } from './guards/jwt-auth.guard';
-import { RolesGuard } from './guards/roles.guard';
+import { PasswordHasher } from './services/password-hasher.service'
+import { AuthGuard } from './guards/jwt-auth.guard'
+import { RolesGuard } from './guards/roles.guard'
 
 @Module({
   imports: [

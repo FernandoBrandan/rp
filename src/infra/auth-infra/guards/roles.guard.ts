@@ -1,7 +1,7 @@
-import { Reflector } from '@nestjs/core';
-import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
-import { UserRole } from '@common/user-role.enum';
-export const ROLES_KEY = 'roles';
+import { Reflector } from '@nestjs/core'
+import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common'
+import { UserRole } from '@common/user-role.enum'
+export const ROLES_KEY = 'roles'
 
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -11,11 +11,12 @@ export class RolesGuard implements CanActivate {
     const roles = this.reflector.getAllAndOverride<UserRole[]>(ROLES_KEY, [
       context.getHandler(),
       context.getClass(),
-    ]);
+    ])
 
-    if (!roles) return true;
+    if (!roles) return true
 
-    const { user } = context.switchToHttp().getRequest();
-    return roles.includes(user.role);
+    const { user } = context.switchToHttp().getRequest()
+    if (!user) return false
+    return roles.includes(user.role)
   }
 }

@@ -1,16 +1,16 @@
 // src/modules/01catalog/domain/product.entity.ts
 
-import { Serial } from './value-objects/serial.vo';
-import { Money } from '@common/domain/value-objects/money.vo';
-import { ProductStatus } from './enums/productStatus.enum';
+import { Serial } from './value-objects/serial.vo'
+import { Money } from '@common/domain/value-objects/money.vo'
+import { ProductStatus } from './enums/productStatus.enum'
 
 export interface IProduct {
-  id: string;
-  serial: Serial;
-  name: string;
-  price: Money;
-  stock: number;
-  status: ProductStatus;
+  id: string
+  serial: Serial
+  name: string
+  price: Money
+  stock: number
+  status: ProductStatus
 }
 
 export class Product implements IProduct {
@@ -21,42 +21,45 @@ export class Product implements IProduct {
     public price: Money,
     public stock: number,
     public status: ProductStatus = ProductStatus.ACTIVE,
-  ) {}
+  ) {
+    this.updateName(name)
+    this.updateStock(stock)
+  }
 
   updateName(name: string) {
-    const trimmed = name.trim();
+    const trimmed = name.trim()
     if (trimmed.length === 0) {
-      throw new Error('Product name cannot be empty');
+      throw new Error('Product name cannot be empty')
     }
-    this.name = trimmed;
+    this.name = trimmed
   }
 
   updatePrice(price: Money) {
-    this.price = price;
+    this.price = price
   }
 
   updateStock(stock: number) {
     if (!Number.isInteger(stock) || stock < 0) {
-      throw new Error('Invalid stock');
+      throw new Error('Invalid stock')
     }
-    this.stock = stock;
+    this.stock = stock
   }
 
   isActive(): boolean {
-    return this.status === ProductStatus.ACTIVE;
+    return this.status === ProductStatus.ACTIVE
   }
 
   ensureIsActive(): void {
     if (!this.isActive()) {
-      throw new Error(`Product ${this.id} is not active for operations`);
+      throw new Error(`Product ${this.id} is not active for operations`)
     }
   }
 
   activate() {
-    this.status = ProductStatus.ACTIVE;
+    this.status = ProductStatus.ACTIVE
   }
 
   deactivate() {
-    this.status = ProductStatus.INACTIVE;
+    this.status = ProductStatus.INACTIVE
   }
 }

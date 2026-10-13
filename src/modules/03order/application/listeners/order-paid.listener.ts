@@ -18,13 +18,14 @@ export class OrderPaidListener {
   @OnEvent(EventNames.ORDER_PAID)
   async handle(event: OrderPaidEvent) {
     const order = await this.orderRepository.getOrderDetail(event.orderId);
-    if (order) {
-      order.pay();
-      await this.orderRepository.update(order);
-    }
-    if (order?.reservationId) {
+    if (!order) return;
+
+    if (order.reservationId) {
       await this.stockService.confirmReservation(order.reservationId);
       this.logger.info('Stock confirmed', { orderId: event.orderId });
     }
+
+    order.pay();
+    await this.orderRepository.update(order);
   }
 }
