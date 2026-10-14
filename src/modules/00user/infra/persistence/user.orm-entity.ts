@@ -1,28 +1,22 @@
-import {
-  Entity,
-  Column,
-  PrimaryColumn,
-  CreateDateColumn,
-  UpdateDateColumn,
-} from 'typeorm';
+import { Entity, Column, PrimaryColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm'
 
 @Entity('users')
 export class UserEntity {
   @PrimaryColumn({ type: 'varchar' })
-  id: string;
+  id: string
 
   @Column({ unique: true })
-  email: string;
+  email: string
 
   @Column()
-  passwordHash: string;
+  passwordHash: string
 
   @Column()
-  role: string;
+  role: string
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt: Date
 
   @UpdateDateColumn()
-  updatedAt: Date;
+  updatedAt: Date
 }

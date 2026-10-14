@@ -1,10 +1,10 @@
-import 'reflect-metadata';
-import { DataSource } from 'typeorm';
-import * as dotenv from 'dotenv';
+import 'reflect-metadata'
+import { DataSource } from 'typeorm'
+import * as dotenv from 'dotenv'
 
-const env = process.env.NODE_ENV || 'dev';
-const envFile = env === 'dev' ? '.env.dev' : '.env.docker';
-dotenv.config({ path: envFile });
+const env = process.env.NODE_ENV || 'dev'
+const envFile = env === 'dev' ? '.env.dev' : '.env.docker'
+dotenv.config({ path: envFile })
 
 export default new DataSource({
   type: 'postgres',
@@ -19,4 +19,4 @@ export default new DataSource({
 
   synchronize: false,
   logging: process.env.DB_LOGGING === 'true',
-});
+})

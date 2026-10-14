@@ -1,7 +1,7 @@
 // src/modules/02cart/application/mappers/cart.mapper.ts
 
-import { Cart } from '@cart/domain/cart.entity';
-import { CartResponseDTO } from '../dto/response/cart.response.dto';
+import { Cart } from '@cart/domain/cart.entity'
+import { CartResponseDTO } from '../dto/response/cart.response.dto'
 
 export class CartMapper {
   static toResponseDTO(cart: Cart): CartResponseDTO {
@@ -12,7 +12,7 @@ export class CartMapper {
         quantity: item.quantity,
       })),
       totalItems: this.calculateTotalItems(cart.items),
-    };
+    }
   }
 
   static toEnrichedResponseDTO(userId: string, items: any[]): CartResponseDTO {
@@ -20,13 +20,11 @@ export class CartMapper {
       userId,
       items,
       totalItems: this.calculateTotalItems(items),
-      totalPrice: Number(
-        items.reduce((acc, item) => acc + (item.subtotal || 0), 0).toFixed(2),
-      ),
-    };
+      totalPrice: Number(items.reduce((acc, item) => acc + (item.subtotal || 0), 0).toFixed(2)),
+    }
   }
 
   private static calculateTotalItems(items: any[]): number {
-    return items.reduce((sum, item) => sum + item.quantity, 0);
+    return items.reduce((sum, item) => sum + item.quantity, 0)
   }
 }

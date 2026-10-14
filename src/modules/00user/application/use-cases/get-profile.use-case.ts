@@ -1,10 +1,10 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common'
 
-import { Logger } from '@infra/logger/logger.interface';
-import { LOGGER, USER_REPOSITORY } from '@infra/tokens';
+import { Logger } from '@infra/logger/logger.interface'
+import { LOGGER, USER_REPOSITORY } from '@infra/tokens'
 
-import { UserRepository } from '@user/domain/repositories/user.repository';
-import { UserMapper } from '../mappers/user.mapper';
+import { UserRepository } from '@user/domain/repositories/user.repository'
+import { UserMapper } from '../mappers/user.mapper'
 
 @Injectable()
 export class GetProfileUseCase {
@@ -17,11 +17,11 @@ export class GetProfileUseCase {
   ) {}
 
   async execute(userId: string) {
-    this.logger.info('Getting user profile', { userId });
+    this.logger.info('Getting user profile', { userId })
 
-    const user = await this.userRepository.findById(userId);
-    if (!user) throw new NotFoundException('User not found');
+    const user = await this.userRepository.findById(userId)
+    if (!user) throw new NotFoundException('User not found')
 
-    return UserMapper.toResponse(user);
+    return UserMapper.toResponse(user)
   }
 }

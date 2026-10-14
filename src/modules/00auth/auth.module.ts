@@ -1,12 +1,12 @@
-import { Module } from '@nestjs/common';
+import { Module } from '@nestjs/common'
 
-import { AuthInfraModule } from '@infra/auth-infra/auth-infra.module';
-import { LoggerModule } from '@infra/logger/logger.module';
-import { UserModule } from '@user/user.module';
+import { AuthInfraModule } from '@infra/auth-infra/auth-infra.module'
+import { LoggerModule } from '@infra/logger/logger.module'
+import { UserModule } from '@user/user.module'
 
-import { AuthController } from './presentation/auth.controller';
-import { RegisterUseCase } from './application/use-cases/register.use-case';
-import { LoginUseCase } from './application/use-cases/login.use-case';
+import { AuthController } from './presentation/auth.controller'
+import { RegisterUseCase } from './application/use-cases/register.use-case'
+import { LoginUseCase } from './application/use-cases/login.use-case'
 
 @Module({
   imports: [UserModule, AuthInfraModule, LoggerModule],

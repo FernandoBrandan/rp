@@ -4,7 +4,7 @@ export class InfrastructureException extends Error {
     message: string,
     public readonly originalError?: unknown,
   ) {
-    super(message);
-    this.name = 'InfrastructureException';
+    super(message)
+    this.name = 'InfrastructureException'
   }
 }

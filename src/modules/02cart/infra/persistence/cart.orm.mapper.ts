@@ -1,14 +1,12 @@
 // src/modules/02cart/infra/persistence/cart.orm.mapper.ts
-import { Cart } from '@cart/domain/cart.entity';
-import { CartItem } from '@cart/domain/value-objects/cartItem.vo';
-import { CartOrmEntity } from './cart.orm-entity';
+import { Cart } from '@cart/domain/cart.entity'
+import { CartItem } from '@cart/domain/value-objects/cartItem.vo'
+import { CartOrmEntity } from './cart.orm-entity'
 
 export class CartOrmMapper {
   static toDomain(orm: CartOrmEntity): Cart {
-    const domainItems = orm.items.map(
-      (item) => new CartItem(item.productId, item.quantity),
-    );
-    return new Cart(orm.userId, domainItems);
+    const domainItems = orm.items.map((item) => new CartItem(item.productId, item.quantity))
+    return new Cart(orm.userId, domainItems)
   }
 
   static toPersistence(domain: Cart): Partial<CartOrmEntity> {
@@ -18,6 +16,6 @@ export class CartOrmMapper {
         productId: item.productId,
         quantity: item.quantity,
       })),
-    };
+    }
   }
 }

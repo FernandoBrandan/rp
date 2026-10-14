@@ -1,22 +1,22 @@
 // src/main.ts
-import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
-import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import { AppModule } from './app.module';
+import { NestFactory } from '@nestjs/core'
+import { ValidationPipe } from '@nestjs/common'
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger'
+import { AppModule } from './app.module'
 
-import { AppLogger } from '@infra/logger/logger';
-import { correlationIdMiddleware } from '@infra/logger/correlation-id.middleware';
-import { AllExceptionsFilter } from '@infra/errors/all-exceptions.filter';
-import { InfrastructureExceptionFilter } from '@common/filters/infrastructure-exception.filter';
+import { AppLogger } from '@infra/logger/logger'
+import { correlationIdMiddleware } from '@infra/logger/correlation-id.middleware'
+import { AllExceptionsFilter } from '@infra/errors/all-exceptions.filter'
+import { InfrastructureExceptionFilter } from '@common/filters/infrastructure-exception.filter'
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule)
 
   // Config
-  app.enableShutdownHooks();
-  app.use(correlationIdMiddleware);
-  app.useGlobalFilters(new AllExceptionsFilter(new AppLogger()));
-  app.useGlobalFilters(new InfrastructureExceptionFilter());
+  app.enableShutdownHooks()
+  app.use(correlationIdMiddleware)
+  app.useGlobalFilters(new AllExceptionsFilter(new AppLogger()))
+  app.useGlobalFilters(new InfrastructureExceptionFilter())
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -24,7 +24,7 @@ async function bootstrap() {
       forbidNonWhitelisted: true,
       transform: true,
     }),
-  );
+  )
 
   // Swagger
   const config = new DocumentBuilder()
@@ -40,18 +40,18 @@ async function bootstrap() {
     .addTag('cart', 'Carrito de compras')
     .addTag('orders', 'Órdenes e idempotencia')
     .addTag('payments', 'Webhooks y proveedores de pago')
-    .build();
+    .build()
 
-  const document = SwaggerModule.createDocument(app, config);
+  const document = SwaggerModule.createDocument(app, config)
   SwaggerModule.setup('api/docs', app, document, {
     swaggerOptions: {
       persistAuthorization: true,
       tagsSorter: 'alpha',
       operationsSorter: 'method',
     },
-  });
+  })
 
   // Start the server
-  await app.listen(process.env.PORT ?? 3000);
+  await app.listen(process.env.PORT ?? 3000)
 }
-bootstrap();
+bootstrap()

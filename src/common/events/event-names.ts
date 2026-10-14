@@ -4,4 +4,4 @@ export const EventNames = {
   PAYMENT_LINK_CREATED: 'payment.link.created',
   ORDER_PAID: 'order.paid',
   ORDER_PAYMENT_FAILED: 'order.payment_failed',
-} as const;
+} as const

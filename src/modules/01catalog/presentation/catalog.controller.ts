@@ -1,12 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  Post,
-  Put,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Put, UseGuards } from '@nestjs/common'
 import {
   ApiTags,
   ApiOperation,
@@ -15,21 +7,21 @@ import {
   ApiBadRequestResponse,
   ApiNotFoundResponse,
   ApiConflictResponse,
-} from '@nestjs/swagger';
+} from '@nestjs/swagger'
 
-import { AuthGuard } from '@infra/auth-infra/guards/jwt-auth.guard';
-import { RolesGuard } from '@infra/auth-infra/guards/roles.guard';
-import { Roles } from '@infra/auth-infra/decorators/roles.decorator';
-import { UserRole } from '@common/user-role.enum';
+import { AuthGuard } from '@infra/auth-infra/guards/jwt-auth.guard'
+import { RolesGuard } from '@infra/auth-infra/guards/roles.guard'
+import { Roles } from '@infra/auth-infra/decorators/roles.decorator'
+import { UserRole } from '@common/user-role.enum'
 
-import { CreateProductUseCase } from '../application/use-cases/create-product.use-case';
-import { UpdateProductUseCase } from '../application/use-cases/update-product.use-case';
-import { ListProductsUseCase } from '../application/use-cases/list-products.use-case';
-import { GetProductUseCase } from '../application/use-cases/get-product.use-case';
+import { CreateProductUseCase } from '../application/use-cases/create-product.use-case'
+import { UpdateProductUseCase } from '../application/use-cases/update-product.use-case'
+import { ListProductsUseCase } from '../application/use-cases/list-products.use-case'
+import { GetProductUseCase } from '../application/use-cases/get-product.use-case'
 
-import { CreateProductDTO } from '../application/dto/request/create-product.request.dto';
-import { UpdateProductDTO } from '../application/dto/request/update-product.request.dto';
-import { ProductResponseDTO } from '../application/dto/response/product.response.dto';
+import { CreateProductDTO } from '../application/dto/request/create-product.request.dto'
+import { UpdateProductDTO } from '../application/dto/request/update-product.request.dto'
+import { ProductResponseDTO } from '../application/dto/response/product.response.dto'
 
 @ApiTags('products')
 @Controller('products')
@@ -52,7 +44,7 @@ export class CatalogController {
   @ApiBadRequestResponse({ description: 'Payload inválido' })
   @ApiConflictResponse({ description: 'Serial ya existe' })
   create(@Body() dto: CreateProductDTO): Promise<ProductResponseDTO> {
-    return this.createProduct.execute(dto);
+    return this.createProduct.execute(dto)
   }
 
   @Put()
@@ -66,7 +58,7 @@ export class CatalogController {
   @ApiBadRequestResponse({ description: 'Payload inválido' })
   @ApiNotFoundResponse({ description: 'Producto no encontrado' })
   update(@Body() dto: UpdateProductDTO): Promise<ProductResponseDTO> {
-    return this.updateProduct.execute(dto);
+    return this.updateProduct.execute(dto)
   }
 
   @Get(':serial')
@@ -77,7 +69,7 @@ export class CatalogController {
   })
   @ApiNotFoundResponse({ description: 'Producto no encontrado' })
   get(@Param('serial') serial: string): Promise<ProductResponseDTO> {
-    return this.getProduct.execute(serial);
+    return this.getProduct.execute(serial)
   }
 
   @Get()
@@ -88,6 +80,6 @@ export class CatalogController {
     isArray: true,
   })
   list(): Promise<ProductResponseDTO[]> {
-    return this.listProducts.execute();
+    return this.listProducts.execute()
   }
 }

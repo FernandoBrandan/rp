@@ -1,9 +1,6 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { PAYMENT_PROVIDER } from '@infra/tokens';
-import {
-  PaymentOrderSnapshot,
-  PaymentProviderPort,
-} from '../ports/payment-provider.port';
+import { Inject, Injectable } from '@nestjs/common'
+import { PAYMENT_PROVIDER } from '@infra/tokens'
+import { PaymentOrderSnapshot, PaymentProviderPort } from '../ports/payment-provider.port'
 
 @Injectable()
 export class CreatePaymentLinkUseCase {
@@ -13,10 +10,10 @@ export class CreatePaymentLinkUseCase {
   ) {}
 
   async execute(order: PaymentOrderSnapshot): Promise<string> {
-    const result = await this.paymentProvider.generatePaymentLink(order);
+    const result = await this.paymentProvider.generatePaymentLink(order)
     if (!result?.url) {
-      throw new Error('Payment provider returned an empty URL');
+      throw new Error('Payment provider returned an empty URL')
     }
-    return result.url;
+    return result.url
   }
 }

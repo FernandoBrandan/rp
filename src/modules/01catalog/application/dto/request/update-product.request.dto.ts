@@ -1,26 +1,26 @@
 // src/modules/01catalog/application/dto/request/update-product.request.dto.ts
-import { IsString, IsNumber, Min, IsEnum, IsOptional } from 'class-validator';
-import { ProductStatus } from '@catalog/domain/enums/productStatus.enum';
+import { IsString, IsNumber, Min, IsEnum, IsOptional } from 'class-validator'
+import { ProductStatus } from '@catalog/domain/enums/productStatus.enum'
 
 export class UpdateProductDTO {
   @IsString()
-  serial: string;
+  serial: string
 
   @IsOptional()
   @IsString()
-  name?: string;
+  name?: string
 
   @IsOptional()
   @IsNumber()
   @Min(0)
-  price?: number;
+  price?: number
 
   @IsOptional()
   @IsNumber()
   @Min(0)
-  stock?: number;
+  stock?: number
 
   @IsOptional()
   @IsEnum(ProductStatus)
-  status?: ProductStatus;
+  status?: ProductStatus
 }

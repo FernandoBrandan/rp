@@ -1,21 +1,16 @@
 // src/modules/02cart/application/use-cases/add-to-cart.use-case.ts
-import {
-  BadRequestException,
-  Inject,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common'
 
-import { Logger } from '@infra/logger/logger.interface';
+import { Logger } from '@infra/logger/logger.interface'
 
-import { Cart } from '@cart/domain/cart.entity';
-import { CartItem } from '@cart/domain/value-objects/cartItem.vo';
-import { CartRepository } from '@cart/domain/repositories/cart.repository';
-import { ProductCheckerPort } from '../ports/product-checker.port';
-import { AddToCartDTO } from '../dto/request/add-to-cart.request.dto';
-import { CartMapper } from '../mappers/cart.mapper';
+import { Cart } from '@cart/domain/cart.entity'
+import { CartItem } from '@cart/domain/value-objects/cartItem.vo'
+import { CartRepository } from '@cart/domain/repositories/cart.repository'
+import { ProductCheckerPort } from '../ports/product-checker.port'
+import { AddToCartDTO } from '../dto/request/add-to-cart.request.dto'
+import { CartMapper } from '../mappers/cart.mapper'
 
-import { CART_REPOSITORY, LOGGER, PRODUCT_CHECKER } from '@infra/tokens';
+import { CART_REPOSITORY, LOGGER, PRODUCT_CHECKER } from '@infra/tokens'
 
 @Injectable()
 export class AddToCartUseCase {
@@ -31,46 +26,42 @@ export class AddToCartUseCase {
   ) {}
 
   async execute(userId: string, dto: AddToCartDTO) {
-    const { item } = dto;
+    const { item } = dto
 
     this.logger.info('Adding product to cart for user', {
       userId,
       productId: item.productId,
       quantity: item.quantity,
-    });
+    })
 
-    const product = await this.productChecker.validateAvailability(
-      item.productId,
-      item.quantity,
-    );
+    const product = await this.productChecker.validateAvailability(item.productId, item.quantity)
     if (!product.isValid) {
       this.logger.warn('Product not available', {
         productId: item.productId,
         reason: product.reason,
-      });
+      })
 
-      if (product.reason === 'PRODUCT_NOT_FOUND')
-        throw new NotFoundException('Product not found');
+      if (product.reason === 'PRODUCT_NOT_FOUND') throw new NotFoundException('Product not found')
       if (product.reason === 'PRODUCT_INACTIVE')
-        throw new BadRequestException('Product is inactive');
+        throw new BadRequestException('Product is inactive')
       if (product.reason === 'INSUFFICIENT_STOCK')
-        throw new BadRequestException('Insufficient stock for product');
-      throw new BadRequestException(`Product unavailable: ${product.reason}`);
+        throw new BadRequestException('Insufficient stock for product')
+      throw new BadRequestException(`Product unavailable: ${product.reason}`)
     }
 
-    let cart = await this.cartRepository.getCart(userId);
-    if (!cart) cart = new Cart(userId);
+    let cart = await this.cartRepository.getCart(userId)
+    if (!cart) cart = new Cart(userId)
 
-    cart.addItem(new CartItem(item.productId, item.quantity));
+    cart.addItem(new CartItem(item.productId, item.quantity))
 
-    await this.cartRepository.save(cart);
+    await this.cartRepository.save(cart)
 
     this.logger.info('Product added to cart for user', {
       userId,
       productId: item.productId,
       quantity: item.quantity,
-    });
+    })
 
-    return CartMapper.toResponseDTO(cart);
+    return CartMapper.toResponseDTO(cart)
   }
 }

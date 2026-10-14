@@ -7,7 +7,7 @@ import {
   Param,
   Post,
   UseGuards,
-} from '@nestjs/common';
+} from '@nestjs/common'
 import {
   ApiTags,
   ApiOperation,
@@ -17,16 +17,16 @@ import {
   ApiBadRequestResponse,
   ApiNotFoundResponse,
   ApiConflictResponse,
-} from '@nestjs/swagger';
+} from '@nestjs/swagger'
 
-import { CreateOrderUseCase } from '../application/use-cases/create-order.use-case';
-import { CreateOrderDTO } from '../application/dto/request/create-order.dto';
-import { OrderResponseDTO } from '../application/dto/response/order-response.dto';
-import { OrderRepository } from '../domain/repositories/order.repository';
-import { ORDER_REPOSITORY } from '@infra/tokens';
-import { OrderMapper } from '../application/mappers/order.mapper';
-import { AuthGuard } from '@infra/auth-infra/guards/jwt-auth.guard';
-import { CurrentUser } from '@infra/auth-infra/decorators/current-user.decorator';
+import { CreateOrderUseCase } from '../application/use-cases/create-order.use-case'
+import { CreateOrderDTO } from '../application/dto/request/create-order.dto'
+import { OrderResponseDTO } from '../application/dto/response/order-response.dto'
+import { OrderRepository } from '../domain/repositories/order.repository'
+import { ORDER_REPOSITORY } from '@infra/tokens'
+import { OrderMapper } from '../application/mappers/order.mapper'
+import { AuthGuard } from '@infra/auth-infra/guards/jwt-auth.guard'
+import { CurrentUser } from '@infra/auth-infra/decorators/current-user.decorator'
 
 @ApiTags('orders')
 @UseGuards(AuthGuard)
@@ -59,7 +59,7 @@ export class OrderController {
     @CurrentUser('sub') userId: string,
     @Body() dto: CreateOrderDTO,
   ): Promise<OrderResponseDTO> {
-    return this.createOrderUseCase.execute(userId, dto);
+    return this.createOrderUseCase.execute(userId, dto)
   }
 
   @Get()
@@ -69,11 +69,9 @@ export class OrderController {
     type: OrderResponseDTO,
     isArray: true,
   })
-  async findMyOrders(
-    @CurrentUser('sub') userId: string,
-  ): Promise<OrderResponseDTO[]> {
-    const orders = await this.orderRepository.getOrdersByUser(userId);
-    return orders.map(OrderMapper.toResponse);
+  async findMyOrders(@CurrentUser('sub') userId: string): Promise<OrderResponseDTO[]> {
+    const orders = await this.orderRepository.getOrdersByUser(userId)
+    return orders.map(OrderMapper.toResponse)
   }
 
   @Get(':id')
@@ -87,15 +85,15 @@ export class OrderController {
     @CurrentUser('sub') userId: string,
     @Param('id') id: string,
   ): Promise<OrderResponseDTO> {
-    const order = await this.orderRepository.getOrderDetail(id);
+    const order = await this.orderRepository.getOrderDetail(id)
     if (!order) {
-      throw new NotFoundException(`Order with id ${id} not found`);
+      throw new NotFoundException(`Order with id ${id} not found`)
     }
 
     if (order.userId !== userId) {
-      throw new NotFoundException(`Order with id ${id} not found`);
+      throw new NotFoundException(`Order with id ${id} not found`)
     }
 
-    return OrderMapper.toResponse(order);
+    return OrderMapper.toResponse(order)
   }
 }

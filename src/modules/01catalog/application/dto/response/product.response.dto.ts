@@ -1,23 +1,23 @@
 // src/modules/01catalog/application/dto/response/product.response.dto.ts
-import { ApiProperty } from '@nestjs/swagger';
-import { ProductStatus } from '@catalog/domain/enums/productStatus.enum';
+import { ApiProperty } from '@nestjs/swagger'
+import { ProductStatus } from '@catalog/domain/enums/productStatus.enum'
 
 export class ProductResponseDTO {
   @ApiProperty({ example: 'a1b2c3d4-...' })
-  id: string;
+  id: string
 
   @ApiProperty({ example: 'PROD-123456' })
-  serial: string;
+  serial: string
 
   @ApiProperty({ example: 'Laptop Gamer' })
-  name: string;
+  name: string
 
   @ApiProperty({ example: 1500.99 })
-  price: number;
+  price: number
 
   @ApiProperty({ example: 10 })
-  stock: number;
+  stock: number
 
   @ApiProperty({ enum: ProductStatus, example: ProductStatus.ACTIVE })
-  status: string;
+  status: string
 }

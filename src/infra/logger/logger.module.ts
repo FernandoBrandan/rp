@@ -1,9 +1,9 @@
 // src/infra/logger/logger.module.ts
-import { Module } from '@nestjs/common';
-import { APP_INTERCEPTOR } from '@nestjs/core';
-import { AppLogger } from './logger';
-import { LoggingInterceptor } from './logging.interceptor';
-import { LOGGER } from '@infra/tokens';
+import { Module } from '@nestjs/common'
+import { APP_INTERCEPTOR } from '@nestjs/core'
+import { AppLogger } from './logger'
+import { LoggingInterceptor } from './logging.interceptor'
+import { LOGGER } from '@infra/tokens'
 
 @Module({
   providers: [

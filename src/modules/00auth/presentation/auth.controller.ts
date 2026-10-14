@@ -1,4 +1,4 @@
-import { Body, Controller, HttpCode, Post } from '@nestjs/common';
+import { Body, Controller, HttpCode, Post } from '@nestjs/common'
 import {
   ApiTags,
   ApiOperation,
@@ -7,17 +7,14 @@ import {
   ApiConflictResponse,
   ApiUnauthorizedResponse,
   ApiBadRequestResponse,
-} from '@nestjs/swagger';
+} from '@nestjs/swagger'
 
-import { RegisterUseCase } from '../application/use-cases/register.use-case';
-import { LoginUseCase } from '../application/use-cases/login.use-case';
+import { RegisterUseCase } from '../application/use-cases/register.use-case'
+import { LoginUseCase } from '../application/use-cases/login.use-case'
 
-import { RegisterRequestDTO } from '../application/dto/request/register.request.dto';
-import { LoginRequestDTO } from '../application/dto/request/login.request.dto';
-import {
-  AuthResponseDTO,
-  RegisterResponseDTO,
-} from '../application/dto/response/auth.response.dto';
+import { RegisterRequestDTO } from '../application/dto/request/register.request.dto'
+import { LoginRequestDTO } from '../application/dto/request/login.request.dto'
+import { AuthResponseDTO, RegisterResponseDTO } from '../application/dto/response/auth.response.dto'
 
 @ApiTags('auth')
 @Controller('auth')
@@ -36,7 +33,7 @@ export class AuthController {
   @ApiBadRequestResponse({ description: 'Payload inválido' })
   @ApiConflictResponse({ description: 'Email ya registrado' })
   register(@Body() dto: RegisterRequestDTO): Promise<RegisterResponseDTO> {
-    return this.registerUC.execute(dto);
+    return this.registerUC.execute(dto)
   }
 
   @Post('login')
@@ -46,6 +43,6 @@ export class AuthController {
   @ApiBadRequestResponse({ description: 'Payload inválido' })
   @ApiUnauthorizedResponse({ description: 'Credenciales inválidas' })
   login(@Body() dto: LoginRequestDTO): Promise<AuthResponseDTO> {
-    return this.loginUC.execute(dto);
+    return this.loginUC.execute(dto)
   }
 }

@@ -1,24 +1,24 @@
 // src/modules/01catalog/infra/persistence/product.orm-entity.ts
 
-import { Entity, Column, PrimaryColumn } from 'typeorm';
+import { Entity, Column, PrimaryColumn } from 'typeorm'
 
 @Entity('products')
 export class ProductEntity {
   @PrimaryColumn()
-  id: string;
+  id: string
 
   @Column({ unique: true })
-  serial: string;
+  serial: string
 
   @Column()
-  name: string;
+  name: string
 
   @Column('float')
-  price: number;
+  price: number
 
   @Column({ default: 0 })
-  stock: number;
+  stock: number
 
   @Column()
-  status: string;
+  status: string
 }

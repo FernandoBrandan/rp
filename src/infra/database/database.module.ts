@@ -1,7 +1,7 @@
 // src/infra/database/database.module.ts
-import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { TypeOrmModule } from '@nestjs/typeorm';
+import { Module } from '@nestjs/common'
+import { ConfigModule, ConfigService } from '@nestjs/config'
+import { TypeOrmModule } from '@nestjs/typeorm'
 
 @Module({
   imports: [
@@ -10,9 +10,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       inject: [ConfigService],
 
       useFactory: (config: ConfigService) => {
-        const nodeEnv = config.get<string>('NODE_ENV');
-        const isProduction = nodeEnv === 'prod';
-        const isTest = nodeEnv === 'test';
+        const nodeEnv = config.get<string>('NODE_ENV')
+        const isProduction = nodeEnv === 'prod'
+        const isTest = nodeEnv === 'test'
 
         return {
           type: 'postgres',
@@ -26,9 +26,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
           synchronize: !isProduction,
 
-          migrations: isProduction
-            ? ['dist/infra/database/migrations/*.js']
-            : [],
+          migrations: isProduction ? ['dist/infra/database/migrations/*.js'] : [],
           migrationsRun: isProduction,
           migrationsTableName: 'migrations',
 
@@ -42,7 +40,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
           retryAttempts: isTest ? 0 : 5,
           retryDelay: isTest ? 0 : 3000,
-        };
+        }
       },
     }),
   ],

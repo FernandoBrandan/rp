@@ -1,25 +1,22 @@
-import {
-  PostgreSqlContainer,
-  StartedPostgreSqlContainer,
-} from '@testcontainers/postgresql';
-import { DataSource } from 'typeorm';
+import { PostgreSqlContainer, StartedPostgreSqlContainer } from '@testcontainers/postgresql'
+import { DataSource } from 'typeorm'
 
-import { UserEntity } from '@user/infra/persistence/user.orm-entity';
-import { ProductEntity } from '@catalog/infra/persistence/product.orm-entity';
-import { StockReservationEntity } from '@catalog/infra/persistence/stock-reservation.orm-entity';
-import { CartOrmEntity } from '@cart/infra/persistence/cart.orm-entity';
-import { OrderEntity } from '@order/infra/persistence/order.orm-entity';
+import { UserEntity } from '@user/infra/persistence/user.orm-entity'
+import { ProductEntity } from '@catalog/infra/persistence/product.orm-entity'
+import { StockReservationEntity } from '@catalog/infra/persistence/stock-reservation.orm-entity'
+import { CartOrmEntity } from '@cart/infra/persistence/cart.orm-entity'
+import { OrderEntity } from '@order/infra/persistence/order.orm-entity'
 
 export class TestDatabase {
-  private container: StartedPostgreSqlContainer;
-  public dataSource: DataSource;
+  private container: StartedPostgreSqlContainer
+  public dataSource: DataSource
 
   async start(): Promise<void> {
     this.container = await new PostgreSqlContainer('postgres:16-alpine')
       .withDatabase('test')
       .withUsername('test')
       .withPassword('test')
-      .start();
+      .start()
 
     this.dataSource = new DataSource({
       type: 'postgres',
@@ -28,29 +25,23 @@ export class TestDatabase {
       username: 'test',
       password: 'test',
       database: 'test',
-      entities: [
-        UserEntity,
-        ProductEntity,
-        StockReservationEntity,
-        CartOrmEntity,
-        OrderEntity,
-      ],
+      entities: [UserEntity, ProductEntity, StockReservationEntity, CartOrmEntity, OrderEntity],
       synchronize: true,
       dropSchema: true,
-    });
+    })
 
-    await this.dataSource.initialize();
+    await this.dataSource.initialize()
   }
 
   async clear(): Promise<void> {
-    const entities = this.dataSource.entityMetadatas;
+    const entities = this.dataSource.entityMetadatas
     for (const meta of entities) {
-      await this.dataSource.query(`TRUNCATE TABLE "${meta.tableName}" CASCADE`);
+      await this.dataSource.query(`TRUNCATE TABLE "${meta.tableName}" CASCADE`)
     }
   }
 
   async stop(): Promise<void> {
-    await this.dataSource.destroy();
-    await this.container.stop();
+    await this.dataSource.destroy()
+    await this.container.stop()
   }
 }

@@ -11,12 +11,12 @@ export enum UserRole2 {
   SUPER_ADMIN = 'SUPER_ADMIN', // Control total
 }
 
-type Role = 'admin' | 'user' | 'guest';
+type Role = 'admin' | 'user' | 'guest'
 const permissions: Record<Role, string[]> = {
   admin: ['read', 'write', 'delete'],
   user: ['read', 'write'],
   guest: ['read'],
-};
+}
 
 // C (Create):
 // ADMIN y SUPER_ADMIN → pueden crear usuarios (ej: dar de alta un agente o supervisor).

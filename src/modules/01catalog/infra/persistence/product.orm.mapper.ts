@@ -1,10 +1,10 @@
 // src/modules/01catalog/infra/persistence/product.orm.mapper.ts
 
-import { Product } from '@catalog/domain/product.entity';
-import { Serial } from '@catalog/domain/value-objects/serial.vo';
-import { Money } from '@common/domain/value-objects/money.vo';
-import { ProductStatus } from '@catalog/domain/enums/productStatus.enum';
-import { ProductEntity } from './product.orm-entity';
+import { Product } from '@catalog/domain/product.entity'
+import { Serial } from '@catalog/domain/value-objects/serial.vo'
+import { Money } from '@common/domain/value-objects/money.vo'
+import { ProductStatus } from '@catalog/domain/enums/productStatus.enum'
+import { ProductEntity } from './product.orm-entity'
 
 export class ProductOrmMapper {
   static toDomain(orm: ProductEntity): Product {
@@ -15,7 +15,7 @@ export class ProductOrmMapper {
       new Money(orm.price),
       orm.stock,
       orm.status === 'ACTIVE' ? ProductStatus.ACTIVE : ProductStatus.INACTIVE,
-    );
+    )
   }
 
   static toPersistence(domain: Product): Partial<ProductEntity> {
@@ -26,6 +26,6 @@ export class ProductOrmMapper {
       price: domain.price.getValue(),
       stock: domain.stock,
       status: domain.status,
-    };
+    }
   }
 }

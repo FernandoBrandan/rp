@@ -3,8 +3,8 @@
 declare global {
   namespace Express {
     interface Request {
-      correlationId: string;
-      user?: { sub: string; role: string };
+      correlationId: string
+      user?: { sub: string; role: string }
     }
   }
 }

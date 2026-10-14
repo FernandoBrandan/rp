@@ -1,15 +1,10 @@
-import { Body, Controller, Headers, HttpCode, Post } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiOkResponse,
-  ApiBadRequestResponse,
-} from '@nestjs/swagger';
+import { Body, Controller, Headers, HttpCode, Post } from '@nestjs/common'
+import { ApiTags, ApiOperation, ApiOkResponse, ApiBadRequestResponse } from '@nestjs/swagger'
 
 import {
   HandleWebhookUseCase,
   PaymentWebhookPayload,
-} from '../application/use-cases/handle-webhook.use-case';
+} from '../application/use-cases/handle-webhook.use-case'
 
 @ApiTags('payments')
 @Controller('payments')
@@ -26,7 +21,7 @@ export class PaymentsController {
   @ApiOkResponse({ description: 'Webhook procesado' })
   @ApiBadRequestResponse({ description: 'Payload inválido' })
   async handleWebhook(@Body() payload: PaymentWebhookPayload) {
-    await this.handleWebhookUC.execute(payload);
-    return { received: true };
+    await this.handleWebhookUC.execute(payload)
+    return { received: true }
   }
 }

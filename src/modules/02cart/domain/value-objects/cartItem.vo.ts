@@ -6,15 +6,15 @@ export class CartItem {
     public readonly quantity: number,
   ) {
     if (!Number.isInteger(quantity) || quantity <= 0) {
-      throw new Error('Quantity must be a positive integer');
+      throw new Error('Quantity must be a positive integer')
     }
   }
 
   withQuantity(quantity: number): CartItem {
-    return new CartItem(this.productId, quantity);
+    return new CartItem(this.productId, quantity)
   }
 
   addQuantity(amount: number): CartItem {
-    return new CartItem(this.productId, this.quantity + amount);
+    return new CartItem(this.productId, this.quantity + amount)
   }
 }

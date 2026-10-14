@@ -1,12 +1,12 @@
 // src/modules/01catalog/application/use-cases/list-products.use-case.ts
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common'
 
-import { Logger } from '@infra/logger/logger.interface';
+import { Logger } from '@infra/logger/logger.interface'
 
-import { ProductRepository } from '@catalog/domain/repositories/product.repository';
-import { LOGGER, PRODUCT_REPOSITORY } from '@infra/tokens';
+import { ProductRepository } from '@catalog/domain/repositories/product.repository'
+import { LOGGER, PRODUCT_REPOSITORY } from '@infra/tokens'
 
-import { ProductMapper } from '../mappers/product.mapper';
+import { ProductMapper } from '../mappers/product.mapper'
 
 @Injectable()
 export class ListProductsUseCase {
@@ -19,10 +19,10 @@ export class ListProductsUseCase {
   ) {}
 
   async execute() {
-    this.logger.info('Listing products');
+    this.logger.info('Listing products')
 
-    const products = await this.productRepository.findAll();
+    const products = await this.productRepository.findAll()
 
-    return products.map(ProductMapper.toResponse);
+    return products.map(ProductMapper.toResponse)
   }
 }

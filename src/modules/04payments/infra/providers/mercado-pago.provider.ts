@@ -1,11 +1,11 @@
-import { Inject, Injectable, NotImplementedException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { Logger } from '@infra/logger/logger.interface';
-import { LOGGER } from '@infra/tokens';
+import { Inject, Injectable, NotImplementedException } from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
+import { Logger } from '@infra/logger/logger.interface'
+import { LOGGER } from '@infra/tokens'
 import {
   PaymentOrderSnapshot,
   PaymentProviderPort,
-} from '../../application/ports/payment-provider.port';
+} from '../../application/ports/payment-provider.port'
 
 @Injectable()
 export class MercadoPagoProvider implements PaymentProviderPort {
@@ -14,21 +14,17 @@ export class MercadoPagoProvider implements PaymentProviderPort {
     @Inject(LOGGER) private readonly logger: Logger,
   ) {}
 
-  async generatePaymentLink(
-    order: PaymentOrderSnapshot,
-  ): Promise<{ url: string }> {
-    const accessToken = this.config.get<string>('MERCADOPAGO_ACCESS_TOKEN');
+  async generatePaymentLink(order: PaymentOrderSnapshot): Promise<{ url: string }> {
+    const accessToken = this.config.get<string>('MERCADOPAGO_ACCESS_TOKEN')
     if (!accessToken) {
-      throw new Error('MERCADOPAGO_ACCESS_TOKEN is not configured');
+      throw new Error('MERCADOPAGO_ACCESS_TOKEN is not configured')
     }
 
     this.logger.warn('MercadoPagoProvider is not implemented yet', {
       orderId: order.id,
-    });
+    })
 
-    throw new NotImplementedException(
-      'MercadoPagoProvider.generatePaymentLink is not implemented',
-    );
+    throw new NotImplementedException('MercadoPagoProvider.generatePaymentLink is not implemented')
 
     // 1. Llamar a la API de MercadoPago (SDK o HTTP)
     // 2. Mapear respuesta → { url: string }

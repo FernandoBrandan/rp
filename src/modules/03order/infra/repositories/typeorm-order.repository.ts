@@ -1,12 +1,12 @@
 // src/modules/03order/infra/repositories/typeorm-order.repository.ts
-import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { InfrastructureException } from '@common/exceptions/infrastructure.exception';
-import { Order } from '@order/domain/order.entity';
-import { OrderRepository } from '@order/domain/repositories/order.repository';
-import { OrderEntity } from '../persistence/order.orm-entity';
-import { OrderOrmMapper } from '../persistence/order.orm.mapper';
+import { Injectable } from '@nestjs/common'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
+import { InfrastructureException } from '@common/exceptions/infrastructure.exception'
+import { Order } from '@order/domain/order.entity'
+import { OrderRepository } from '@order/domain/repositories/order.repository'
+import { OrderEntity } from '../persistence/order.orm-entity'
+import { OrderOrmMapper } from '../persistence/order.orm.mapper'
 
 @Injectable()
 export class TypeOrmOrderRepository implements OrderRepository {
@@ -17,50 +17,50 @@ export class TypeOrmOrderRepository implements OrderRepository {
 
   async createOrder(order: Order): Promise<void> {
     try {
-      const entity = this.ormRepo.create(OrderOrmMapper.toPersistence(order));
-      await this.ormRepo.save(entity);
+      const entity = this.ormRepo.create(OrderOrmMapper.toPersistence(order))
+      await this.ormRepo.save(entity)
     } catch (error) {
-      this.handleConnectionError(error);
+      this.handleConnectionError(error)
     }
   }
 
   async getOrdersByUser(userId: string): Promise<Order[]> {
     try {
-      const orms = await this.ormRepo.find({ where: { userId } });
-      return orms.map(OrderOrmMapper.toDomain);
+      const orms = await this.ormRepo.find({ where: { userId } })
+      return orms.map(OrderOrmMapper.toDomain)
     } catch (error) {
-      this.handleConnectionError(error);
+      this.handleConnectionError(error)
     }
   }
 
   async getOrderDetail(id: string): Promise<Order | null> {
     try {
-      const orm = await this.ormRepo.findOne({ where: { id } });
-      return orm ? OrderOrmMapper.toDomain(orm) : null;
+      const orm = await this.ormRepo.findOne({ where: { id } })
+      return orm ? OrderOrmMapper.toDomain(orm) : null
     } catch (error) {
-      this.handleConnectionError(error);
+      this.handleConnectionError(error)
     }
   }
 
   async update(order: Order): Promise<void> {
     try {
-      const persistenceModel = OrderOrmMapper.toPersistence(order);
-      const entity = await this.ormRepo.preload(persistenceModel);
+      const persistenceModel = OrderOrmMapper.toPersistence(order)
+      const entity = await this.ormRepo.preload(persistenceModel)
 
       if (entity) {
-        await this.ormRepo.save(entity);
+        await this.ormRepo.save(entity)
       }
     } catch (error) {
-      this.handleConnectionError(error);
+      this.handleConnectionError(error)
     }
   }
 
   async findByIdempotencyKey(idempotencyKey: string): Promise<Order | null> {
     try {
-      const orm = await this.ormRepo.findOne({ where: { idempotencyKey } });
-      return orm ? OrderOrmMapper.toDomain(orm) : null;
+      const orm = await this.ormRepo.findOne({ where: { idempotencyKey } })
+      return orm ? OrderOrmMapper.toDomain(orm) : null
     } catch (error) {
-      this.handleConnectionError(error);
+      this.handleConnectionError(error)
     }
   }
 
@@ -69,11 +69,11 @@ export class TypeOrmOrderRepository implements OrderRepository {
       error.code === 'ECONNREFUSED' ||
       error.message?.includes('connect ETIMEDOUT') ||
       error.message?.includes('Connection terminated') ||
-      error.message?.includes('Connection lost');
+      error.message?.includes('Connection lost')
 
     if (isConnectionError) {
-      throw new InfrastructureException('Database connection failed', error);
+      throw new InfrastructureException('Database connection failed', error)
     }
-    throw error;
+    throw error
   }
 }

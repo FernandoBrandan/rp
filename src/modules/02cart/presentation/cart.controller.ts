@@ -1,13 +1,4 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  Post,
-  Put,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards } from '@nestjs/common'
 import {
   ApiTags,
   ApiOperation,
@@ -15,19 +6,19 @@ import {
   ApiCreatedResponse,
   ApiBadRequestResponse,
   ApiNotFoundResponse,
-} from '@nestjs/swagger';
+} from '@nestjs/swagger'
 
-import { GetCartUseCase } from '../application/use-cases/get-cart.use-case';
-import { AddToCartUseCase } from '../application/use-cases/add-to-cart.use-case';
-import { UpdateQuantityUseCase } from '../application/use-cases/update-quantity.use-case';
-import { RemoveFromCartUseCase } from '../application/use-cases/remove-from-cart.use-case';
+import { GetCartUseCase } from '../application/use-cases/get-cart.use-case'
+import { AddToCartUseCase } from '../application/use-cases/add-to-cart.use-case'
+import { UpdateQuantityUseCase } from '../application/use-cases/update-quantity.use-case'
+import { RemoveFromCartUseCase } from '../application/use-cases/remove-from-cart.use-case'
 
-import { AddToCartDTO } from '../application/dto/request/add-to-cart.request.dto';
-import { UpdateQuantityDTO } from '../application/dto/request/update-quantity.request.dto';
-import { CartResponseDTO } from '../application/dto/response/cart.response.dto';
+import { AddToCartDTO } from '../application/dto/request/add-to-cart.request.dto'
+import { UpdateQuantityDTO } from '../application/dto/request/update-quantity.request.dto'
+import { CartResponseDTO } from '../application/dto/response/cart.response.dto'
 
-import { AuthGuard } from '@infra/auth-infra/guards/jwt-auth.guard';
-import { CurrentUser } from '@infra/auth-infra/decorators/current-user.decorator';
+import { AuthGuard } from '@infra/auth-infra/guards/jwt-auth.guard'
+import { CurrentUser } from '@infra/auth-infra/decorators/current-user.decorator'
 
 @UseGuards(AuthGuard)
 @ApiTags('cart')
@@ -47,7 +38,7 @@ export class CartController {
     type: CartResponseDTO,
   })
   get(@CurrentUser('sub') userId: string): Promise<CartResponseDTO> {
-    return this.getCartUC.execute(userId);
+    return this.getCartUC.execute(userId)
   }
 
   @Post('items')
@@ -60,11 +51,8 @@ export class CartController {
     description: 'Producto inactivo o stock insuficiente',
   })
   @ApiNotFoundResponse({ description: 'Producto no encontrado' })
-  add(
-    @CurrentUser('sub') userId: string,
-    @Body() dto: AddToCartDTO,
-  ): Promise<CartResponseDTO> {
-    return this.addToCartUC.execute(userId, dto);
+  add(@CurrentUser('sub') userId: string, @Body() dto: AddToCartDTO): Promise<CartResponseDTO> {
+    return this.addToCartUC.execute(userId, dto)
   }
 
   @Put('items/:productId')
@@ -82,7 +70,7 @@ export class CartController {
     @Param('productId') productId: string,
     @Body() dto: UpdateQuantityDTO,
   ): Promise<CartResponseDTO> {
-    return this.updateQuantityUC.execute(userId, productId, dto);
+    return this.updateQuantityUC.execute(userId, productId, dto)
   }
 
   @Delete('items/:productId')
@@ -96,6 +84,6 @@ export class CartController {
     @CurrentUser('sub') userId: string,
     @Param('productId') productId: string,
   ): Promise<CartResponseDTO> {
-    return this.removeFromCartUC.execute(userId, productId);
+    return this.removeFromCartUC.execute(userId, productId)
   }
 }

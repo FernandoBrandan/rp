@@ -1,31 +1,31 @@
-import { Entity, Column, PrimaryColumn } from 'typeorm';
+import { Entity, Column, PrimaryColumn } from 'typeorm'
 
 @Entity('orders')
 export class OrderEntity {
   @PrimaryColumn({ type: 'varchar' })
-  id: string;
+  id: string
 
   @Column()
-  userId: string;
+  userId: string
 
   @Column({ type: 'varchar', unique: true })
-  idempotencyKey: string;
+  idempotencyKey: string
 
   @Column('json')
-  items: { productId: string; quantity: number; price: number }[];
+  items: { productId: string; quantity: number; price: number }[]
 
   @Column('float')
-  total: number;
+  total: number
 
   @Column()
-  status: string;
+  status: string
 
   @Column()
-  reservationId: string;
+  reservationId: string
 
   @Column({ default: 'PENDING' })
-  paymentStatus: string;
+  paymentStatus: string
 
   @Column({ nullable: true })
-  paymentUrl: string;
+  paymentUrl: string
 }

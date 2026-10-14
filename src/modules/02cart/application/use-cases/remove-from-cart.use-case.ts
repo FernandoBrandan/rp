@@ -1,12 +1,12 @@
 // src/modules/02cart/application/use-cases/remove-from-cart.use-case.ts
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common'
 
-import { Logger } from '@infra/logger/logger.interface';
+import { Logger } from '@infra/logger/logger.interface'
 
-import { CartRepository } from '@cart/domain/repositories/cart.repository';
-import { CartMapper } from '../mappers/cart.mapper';
+import { CartRepository } from '@cart/domain/repositories/cart.repository'
+import { CartMapper } from '../mappers/cart.mapper'
 
-import { CART_REPOSITORY, LOGGER } from '@infra/tokens';
+import { CART_REPOSITORY, LOGGER } from '@infra/tokens'
 
 @Injectable()
 export class RemoveFromCartUseCase {
@@ -22,22 +22,22 @@ export class RemoveFromCartUseCase {
     this.logger.info('Removing product from cart', {
       userId,
       productId,
-    });
+    })
 
-    const cart = await this.cartRepository.getCart(userId);
+    const cart = await this.cartRepository.getCart(userId)
     if (!cart) {
-      this.logger.warn('Cart not found for user', { userId });
-      throw new NotFoundException('Cart not found');
+      this.logger.warn('Cart not found for user', { userId })
+      throw new NotFoundException('Cart not found')
     }
 
-    cart.removeItem(productId);
-    await this.cartRepository.save(cart);
+    cart.removeItem(productId)
+    await this.cartRepository.save(cart)
 
     this.logger.info('Product removed from cart', {
       userId,
       productId,
-    });
+    })
 
-    return CartMapper.toResponseDTO(cart);
+    return CartMapper.toResponseDTO(cart)
   }
 }
