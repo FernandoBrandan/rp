@@ -51,7 +51,7 @@ describe('CircuitBreakingPaymentProvider', () => {
 
     const fn = jest.fn().mockResolvedValue({ url: 'never' })
     const inner2 = makeInner(fn)
-    const provider2 = new CircuitBreakingPaymentProvider(
+    const provider = new CircuitBreakingPaymentProvider(
       inner2,
       { threshold: 2, resetMs: 60_000 },
       makeLogger() as any,
