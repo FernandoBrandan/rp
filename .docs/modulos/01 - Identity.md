@@ -1,98 +1,64 @@
-# Identity — ordenado por fases
+# Identity
+* **Decisiones** 
+  + [x] Un solo `User` con roles `USER | ADMIN`
+  + [x] Auth como servicio independiente (00auth + 00user)
 
-## Decisión de diseño
+* **Fase 1** — MVP - register, login, get access token. Endpoints validate token.
+  + [x] Dominio
+    - [x] `User` (id, email, passwordHash, role)
+    - [x] `Email` VO (formato + normalización)
+    - [x] `UserRole` enum
+    - [x] `UserRepository` interface
+  + [x] Aplicación
+    - [x] `RegisterUser` (hash bcrypt)
+    - [x] `LoginUser` (emite access token)
+  + [x] Infraestructura
+    - [x] `TypeOrmUserRepository`
+    - [x] `PasswordHasher` (bcrypt)
+    - [x] `JwtService` (access token) 15 min
+  + [x] Presentación
+    - [x] `POST /auth/register`
+    - [x] `POST /auth/login`
+    - [x] `GET /user/me`
+  + [x] Seguridad
+    - [x] `JwtAuthGuard`
+    - [x] `ValidationPipe` en DTOs
+  + [ ] Bugs a arreglar
+    - [ ] `expiresIn` fuera de `signOptions` → tokens no expiran
+    - [ ] Login timing-safe (dummy hash)
+    - [ ] `RolesGuard` null check
+    - [ ] Sacar `email` del payload JWT
+    - [ ] Tag Swagger `user` → `users`
+  + [ ] Check
+    - [ ] `JwtService` -> Verificar si emite token corta duración 15 min 
+    - [ ] `JwtAuthGuard` -> Verificar rechaza requests sin token válido
 
-- Un solo `User` con roles `USER` | `ADMIN`.
-- Auth es un servicio independiente.
+* **Fase 2** — Refresh + roles : sesiones que duran más que el access token, y control de acceso por rol.
+  + [ ] Dominio: `refreshTokenHash` en `User` /  entidad 'RefreshToken' separada, con 'userId', 'hash', 'expiresAt'
+  + [ ] Aplicación
+    - [ ] `RefreshToken` use case : valida refresh token, emite nuevo par (access + refresh)
+    - [ ] `GetCurrentUser` : devuelve el perfil del usuario autenticado
+  + [ ] Infra: rotación de refresh
+    - [ ] Refresh token almacenado hasheado (bcrypt, mismo hasher)
+    - [ ] Estrategia de rotación: al usarlo, se invalida el anterior
+  + [ ] Presentación
+    - [ ] `POST /auth/refresh` - recibe refresh, emite nuevo access
+    - [ ] `GET /auth/me` - requiere `JwtAuthGuard`
+  + [ ] Seguridad
+    - [ ] `@Roles()` decorator
+    - [ ] `RolesGuard` en endpoints admin - lee metadata `@Roles('ADMIN')` y valida contra `request.user.role`
+    - [ ] Aplicar `RolesGuard` a endpoints admin POST /products,  PUT /products` en Catalog
+  + [ ] Mantener sesión sin re-loguearse; un `USER` no puede acceder a endpoints `ADMIN` .
 
----
-
-## MVP (Fase 1)
-
-**Objetivo**: un usuario puede registrarse, loguearse y recibir un access token.
-Los endpoints protegidos validan ese token.
-
-### Dominio
-
-- `User` (id, email, passwordHash, role)
-- `Email` como Value Object (valida formato)
-- `UserRole` enum: `USER` | `ADMIN`
-- `UserRepository` (interface)
-
-### Aplicación
-
-- `RegisterUser` — crea usuario, hashea password
-- `LoginUser` — valida credenciales, emite access token
-
-### Infraestructura
-
-- Implementación de `UserRepository` (TypeORM)
-- `PasswordHasher` adapter (bcrypt)
-- `JwtService` — emite **access token de corta duración** (15 min)
-
-### Presentación
-
-- `POST /auth/register`
-- `POST /auth/login`
-- `GET /user/me` : Usermodule
-
-### Seguridad
-
-- `JwtAuthGuard` — protege endpoints autenticados
-- `ValidationPipe` sobre DTOs de auth (`RegisterDTO`, `LoginDTO`)
-
-**NOTA**: `POST /auth/register` + `POST /auth/login` funcionan, y un endpoint protegido con `@UseGuards(JwtAuthGuard)` rechaza requests sin token válido.a
-
----
-
-## v2 (Fase 2 · Resiliencia · o Fase 3 · Observabilidad)
-
-**Objetivo**: sesiones que duran más que el access token, y control de acceso por rol.
-
-### Dominio
-
-- Agregar campo `refreshTokenHash` a `User` (o entidad `RefreshToken` separada, con `userId`, `hash`, `expiresAt`)
-
-### Aplicación
-
-- `RefreshToken` — valida refresh token, emite nuevo par (access + refresh)
-- `GetCurrentUser` — devuelve el perfil del usuario autenticado
-
-### Infraestructura
-
-- **Refresh token almacenado hasheado** (bcrypt, mismo hasher)
-- Estrategia de rotación: al usarlo, se invalida el anterior
-
-### Presentación
-
-- `GET /auth/me` — requiere `JwtAuthGuard`
-- `POST /auth/refresh` — recibe refresh, emite nuevo access
-
-### Seguridad
-
-- `RolesGuard` — lee metadata `@Roles('ADMIN')` y valida contra `request.user.role`
-- `@Roles()` decorator
-- Aplicar `RolesGuard` a endpoints admin (ej. `POST /products`, `PUT /products` en Catalog)
-
-**Exit criteria**: el usuario puede mantener sesión sin re-loguearse; un `USER` no puede acceder a endpoints `ADMIN`.
-
----
-
-## v3 / Backlog
-
-**Objetivo**: seguridad avanzada. Solo cuando el proyecto lo exija.
-
-- Logout server-side (invalidar refresh activo)
-- Blacklist de access tokens en Redis (para revocación inmediata)
-- Rotación con detección de reuso (si un refresh viejo se usa dos veces → revocar toda la familia)
-- Multi-dispositivo (varios refresh activos por usuario)
-- Rate limiting específico en `/auth/login` (anti brute-force)
-- 2FA (si el dominio lo requiere)
-- OAuth / social login (Google, GitHub)
-
-**Cuándo**: no antes de tener tráfico real y un caso concreto que lo justifique.
-
----
+* **Fase 3-4** — Backlog - seguridad avanzada
+  + [ ] Logout server-side (invalidar refresh activo)
+  + [ ] Blacklist access tokens (Redis)  (para revocación inmediata)
+  + [ ] Rotación con detección de reuso  (si un refresh viejo se usa dos veces → revocar toda la familia)
+  + [ ] Multi-dispositivo (varios refresh activos por usuario)
+  + [ ] Rate limit en `/auth/login`  (anti brute-force)
+  + [ ] 2FA
+  + [ ] OAuth / social login (Google, GitHub) 
+ 
 
 ## Reglas del BC
 
@@ -101,13 +67,13 @@ Los endpoints protegidos validan ese token.
 | Password siempre hasheado con bcrypt           | Nunca plaintext en DB ni logs          |
 | Refresh token hasheado en DB                   | Si roban la DB, no sirven los tokens   |
 | Access token corto (15 min)                    | Limita ventana de ataque si se filtra  |
-| Validación de DTOs con `class-validator`       | Rechazo temprano de payloads inválidos |
+| Validación de DTOs con `class-validator` | Rechazo temprano de payloads inválidos |
 | Guards aplicados a nivel controller, no método | Menos superficie de olvido             |
 
 ---
 
-**MVP** construye: dominio completo, `register` + `login` use cases, `bcrypt-hasher`, `jwt-token`, `jwt-auth.guard`.
-**v2** agrega: `refresh` use case, `get-current-user`, `roles.guard`, `roles.decorator`, `current-user.decorator`.
+ **MVP** construye: dominio completo, `register` + `login` use cases, `bcrypt-hasher` , `jwt-token` , `jwt-auth.guard` .
+ **v2** agrega: `refresh` use case, `get-current-user` , `roles.guard` , `roles.decorator` , `current-user.decorator` .
 
 ---
 
@@ -119,4 +85,5 @@ Los endpoints protegidos validan ese token.
 | Catalog, Cart, Ordering | Consumen `JwtAuthGuard` para proteger endpoints | Identity expone guards    |
 | Catalog, Cart, Ordering | Consumen `@CurrentUser()` para obtener `userId` | Identity expone decorator |
 
-**Identity es el único BC del que todos dependen.** No al revés. Si algún día otro BC necesita algo de Identity, se hace vía puerto (`UserFinderPort` o similar).
+ **Identity es el único BC del que todos dependen.** No al revés. 
+ Si algún día otro BC necesita algo de Identity, se hace vía puerto ( `UserFinderPort` o similar).

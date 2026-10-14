@@ -1,3 +1,85 @@
+# Payment
+* **Decisiones** 
+  + [x] **Asíncrono con link de pago** (no síncrono)
+    - Razón: MercadoPago/Stripe Checkout funcionan así
+  + [x] No hay entidad `Payment` persistida en MVP
+    - El estado vive en `Order.paymentStatus` + `Order.paymentUrl`
+  + [x] `PaymentProviderPort` con factory por config
+  + [x] `FakePaymentProvider` → renombrar a `SimulatedPaymentProvider`
+
+* **Fase 1** — MVP
+  + [x] Puertos
+    - [x] `PaymentProviderPort`
+    - [x] `OrderFinderPort`
+    - [x] `OrderPaymentStatusPort`
+  + [x] Aplicación
+    - [x] `CreatePaymentLinkUseCase`
+    - [x] `HandleWebhookUseCase`
+    - [x] `OrderCreatedListener`
+  + [x] Infraestructura
+    - [x] `FakePaymentProvider` (approved|failed|pending)
+    - [x] `MercadoPagoProvider` (stub)
+    - [x] Factory en `payment.module.ts`
+  + [x] Presentación
+    - [x] `POST /payments/webhook`
+  + [ ] Bugs a arreglar
+    - [ ] `markGenerating` idempotente
+    - [ ] `markFailed` no falla si ya está READY
+    - [ ] Renombrar `FakePaymentProvider` → `SimulatedPaymentProvider`
+
+* **Fase 2** — Resiliencia (corazón del BC)
+  + [ ] `infra/resilience/`
+    - [ ] `with-timeout.ts`
+    - [ ] `with-retry.ts` (backoff exponencial)
+    - [ ] `circuit-breaker.ts` (CLOSED|OPEN|HALF_OPEN)
+    - [ ] `bulkhead.ts`
+  + [ ] `SimulatedPaymentProvider` modo simulador serio
+    - [ ] `FAKE_PAYMENT_OUTCOME=flaky|timeout`
+    - [ ] `FAKE_PAYMENT_TIMEOUT_RATE=0.20`
+    - [ ] `FAKE_PAYMENT_FAILURE_RATE=0.10`
+    - [ ] `FAKE_PAYMENT_SEED` (determinismo por orden)
+  + [ ] Envolver provider con timeout + retry + breaker
+  + [ ] Firma HMAC de webhook
+  + [ ] Webhook idempotente (Redis `providerEventId`, TTL 24h)
+  + [ ] Métricas: `payment_failures_total{reason}`,  `payment_circuit_breaker_state`
+
+* **Fase 3** — Provider real
+  + [ ] `MercadoPagoProvider` completo
+    - [ ] OAuth con `MERCADOPAGO_ACCESS_TOKEN`
+    - [ ] Crear preference
+    - [ ] Devolver `init_point`
+    - [ ] Validar firma de webhook
+    - [ ] Verificar pago contra API
+  + [ ] Persistir `providerRef` (nueva tabla `payments`)
+  + [ ] `GET /payments/:orderId/status` (pull fallback)
+
+* **Fase 4+** — Backlog
+  + [ ] Métodos de pago múltiples (Stripe, PayPal)
+  + [ ] Refunds parciales/totales
+  + [ ] 3DS / SCA
+  + [ ] One-click con tokens guardados
+  + [ ] Facturación electrónica
+  + [ ] Webhook replay attack protection
+  + [ ] Separación de Billing como BC
+
+* **Dependencias** 
+  + Payment → Identity (implícito vía Order)
+  + Payment → Order (puertos `OrderFinder`,  `OrderPaymentStatus`)
+  + Payment ← Order (evento `order.created`)
+  + Payment → `infra/resilience/` (Fase 2)
+
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+
 # Payment — reconciliación código ↔ notas
 
 Igual que en Ordering: primero leo el código, después reconcilio. Y acá hay una tensión **más grande** que en Ordering.
@@ -7,6 +89,7 @@ Igual que en Ordering: primero leo el código, después reconcilio. Y acá hay u
 ## 1. Diagnóstico: qué hay **realmente** en el código
 
 ### Archivos del BC
+
 ```
 04payments/
 ├── application/
@@ -49,54 +132,54 @@ OrderPaidListener (Order)                         OrderPaymentFailedListener (Or
 
 | Cosa | Cómo está hoy |
 |---|---|
-| **Link de pago asíncrono** | Listener reacciona a `order.created`, no en el request |
+| **Link de pago asíncrono** | Listener reacciona a `order.created` , no en el request |
 | **Provider intercambiable** | Factory que elige `fake` o `mercadopago` por config |
-| **Outcome del fake configurable** | `FAKE_PAYMENT_OUTCOME` (`approved` \| `failed` \| `pending`) |
+| **Outcome del fake configurable** | `FAKE_PAYMENT_OUTCOME` ( `approved` \| `failed` \| `pending` ) |
 | **Delay del fake configurable** | `FAKE_PAYMENT_DELAY_MS` |
 | **Webhook como input externo** | `POST /payments/webhook` con `{ id, status, metadata.orderId }` |
 | **Estados terminales amplios** | `approved/succeeded/paid` y `failed/rejected/cancelled` |
 
 ---
 
-## 2. La tensión: **síncrono vs asíncrono**
+## 2. La tensión: **síncrono vs asíncrono** 
 
 Tus notas dicen:
 
-> *"Payment es crítico. No lo hagas asincrónico sin razón.*
-> *Crear order en estado PENDING → intentar cobrar sincrónicamente → cambiar estado según resultado."*
+>*"Payment es crítico. No lo hagas asincrónico sin razón.*
+>*Crear order en estado PENDING → intentar cobrar sincrónicamente → cambiar estado según resultado."*
 
 Tu código dice lo contrario:
 
 > La orden se crea → se emite `order.created` → **un listener** genera el link → el usuario paga **después** → un webhook confirma.
 
-**No son lo mismo. Son dos modelos distintos:**
+ **No son lo mismo. Son dos modelos distintos:** 
 
 | Modelo | Cuándo se cobra | Estado intermedio | Ejemplo real |
 |---|---|---|---|
 | **A — Síncrono** | En el request de checkout | No hay. `PENDING → PAID` o `FAILED` | One-click, cobro con tarjeta guardada |
 | **B — Asíncrono** | Después, en una URL externa | `WAITING_PAYMENT` | MercadoPago, Stripe Checkout, PayPal |
 
-**El código implementa B. Las notas piden A.**
+ **El código implementa B. Las notas piden A.** 
 
 ### ¿Cuál es el correcto?
 
-**B, para un e-commerce.** Y no es opinión mía — es la realidad del proveedor que ya tenés stubbeado: **MercadoPago es un flujo de link de pago**. Su API devuelve `init_point` o `sandbox_init_point`, el usuario es redirigido, paga en la plataforma de MP, y MP notifica por webhook.
+ **B, para un e-commerce.** Y no es opinión mía — es la realidad del proveedor que ya tenés stubbeado: **MercadoPago es un flujo de link de pago** . Su API devuelve `init_point` o `sandbox_init_point` , el usuario es redirigido, paga en la plataforma de MP, y MP notifica por webhook.
 
-Un flujo síncrono no es "menos complejo" — es **otro flujo**, válido para otro tipo de provider. Si mañana agregás Stripe con `PaymentIntent` server-side, ahí sí entrás en Modelo A.
+Un flujo síncrono no es "menos complejo" — es **otro flujo** , válido para otro tipo de provider. Si mañana agregás Stripe con `PaymentIntent` server-side, ahí sí entrás en Modelo A.
 
-**Recomendación**: **quedarse con B** y corregir la nota. Pero **documentar por qué**, porque "es crítico, no lo hagas asincrónico" es un buen consejo general que no aplica a este tipo de integración.
+ **Recomendación**: **quedarse con B** y corregir la nota. Pero **documentar por qué** , porque "es crítico, no lo hagas asincrónico" es un buen consejo general que no aplica a este tipo de integración.
 
 ### El verdadero consejo que sí aplica
 
-El consejo de "no asincrónico sin razón" es contra **sagas distribuidas** y **orquestadores de 10 pasos**. Vos no tenés eso. Tenés:
+El consejo de "no asincrónico sin razón" es contra **sagas distribuidas** y **orquestadores de 10 pasos** . Vos no tenés eso. Tenés:
 
-- **Un** evento interno (`order.created`)
-- **Dos** listeners en el mismo proceso
-- **Un** input externo (webhook)
+* **Un** evento interno (`order.created`)
+* **Dos** listeners en el mismo proceso
+* **Un** input externo (webhook)
 
-Eso es **asincronía controlada**, no saga. Es perfectamente válido.
+Eso es **asincronía controlada** , no saga. Es perfectamente válido.
 
-**Regla**: asincrónico entre **BCs del mismo monolito** = OK. Saga distribuida entre **servicios** = no en MVP.
+ **Regla**: asincrónico entre **BCs del mismo monolito** = OK. Saga distribuida entre **servicios** = no en MVP.
 
 ---
 
@@ -120,38 +203,38 @@ Eso es **asincronía controlada**, no saga. Es perfectamente válido.
 
 ## FASE 1 — MVP (con deudas)
 
-**Objetivo**: crear link de pago para una orden, simular pago/fallo, y confirmar el estado de la orden vía webhook o simulación.
+ **Objetivo** : crear link de pago para una orden, simular pago/fallo, y confirmar el estado de la orden vía webhook o simulación.
 
 ### Dominio
 
-**Modelo**: **NO** hay una entidad `Payment` persistida en el MVP. El estado del pago **vive en `Order`** (vía `PaymentStatus` + `paymentUrl`). Ver decisión D1 abajo.
+ **Modelo**: **NO** hay una entidad `Payment` persistida en el MVP. El estado del pago **vive en `Order` ** (vía `PaymentStatus` + `paymentUrl` ). Ver decisión D1 abajo.
 
-**Puertos** (interfaces):
-- `PaymentProviderPort` — `generatePaymentLink(order) → { url }`
-- `OrderFinderPort` — leer orden de Order
-- `OrderPaymentStatusPort` — `markGenerating(orderId)`, `markFailed(orderId)`
+ **Puertos** (interfaces):
+* `PaymentProviderPort` — `generatePaymentLink(order) → { url }`
+* `OrderFinderPort` — leer orden de Order
+* `OrderPaymentStatusPort` — `markGenerating(orderId)`,  `markFailed(orderId)`
 
 ### Aplicación
 
-- `CreatePaymentLinkUseCase` — delega al provider, valida URL no vacía
-- `HandleWebhookUseCase` — interpreta status del provider, emite evento interno
+* `CreatePaymentLinkUseCase` — delega al provider, valida URL no vacía
+* `HandleWebhookUseCase` — interpreta status del provider, emite evento interno
 
 ### Infraestructura
 
-- `FakePaymentProvider` — simulador configurable:
-  - `FAKE_PAYMENT_OUTCOME`: `approved` \| `failed` \| `pending`
-  - `FAKE_PAYMENT_DELAY_MS`: latencia simulada
-  - Emite `order.paid` o `order.payment_failed` después del delay
-- `MercadoPagoProvider` — stub (throw `NotImplementedException`)
-- Factory en `payment.module.ts` que elige por `PAYMENT_PROVIDER` config
+* `FakePaymentProvider` — simulador configurable:
+  + `FAKE_PAYMENT_OUTCOME`: `approved` \| `failed` \| `pending`
+  + `FAKE_PAYMENT_DELAY_MS`: latencia simulada
+  + Emite `order.paid` o `order.payment_failed` después del delay
+* `MercadoPagoProvider` — stub (throw `NotImplementedException`)
+* Factory en `payment.module.ts` que elige por `PAYMENT_PROVIDER` config
 
 ### Presentación
 
-- `POST /payments/webhook` — recibe `{ id, status, metadata.orderId }`
+* `POST /payments/webhook` — recibe `{ id, status, metadata.orderId }`
 
 ### Listeners
 
-- `OrderCreatedListener` — reacciona a `order.created`, genera link, emite `payment.link.created`
+* `OrderCreatedListener` — reacciona a `order.created`, genera link, emite `payment.link.created`
 
 ### Deudas del MVP actual
 
@@ -164,26 +247,27 @@ Eso es **asincronía controlada**, no saga. Es perfectamente válido.
 | Webhook sin validación de firma | `payments.controller.ts` | Baja en MVP, Alta en v2 |
 | Webhook sin idempotencia (mismo webhook 2 veces) | `handle-webhook.use-case.ts` | Media |
 
-**Exit criteria**: crear orden → link generado en ≤ 3s → pago simulado → orden `PAID`. Con `FAKE_PAYMENT_OUTCOME=failed`, orden `FAILED` y stock liberado.
+ **Exit criteria** : crear orden → link generado en ≤ 3s → pago simulado → orden `PAID` . Con `FAKE_PAYMENT_OUTCOME=failed` , orden `FAILED` y stock liberado.
 
 ---
 
 ## FASE 2 — Resiliencia (el corazón del BC)
 
-**Objetivo**: el provider puede fallar, tardar o estar caído, y el sistema no se rompe. **Esta es la fase donde el Fake se vuelve una herramienta de simulación seria.**
+ **Objetivo**: el provider puede fallar, tardar o estar caído, y el sistema no se rompe. **Esta es la fase donde el Fake se vuelve una herramienta de simulación seria.** 
 
 ### `infra/resilience/` (compartido con Shipping)
 
-- `withTimeout(promise, ms, label)` — corta si tarda demasiado
-- `withRetry(fn, { attempts, baseMs, maxMs })` — backoff exponencial
-- `CircuitBreaker` — CLOSED / OPEN / HALF_OPEN en memoria
-- `Bulkhead` — limita llamadas concurrentes al provider
+* `withTimeout(promise, ms, label)` — corta si tarda demasiado
+* `withRetry(fn, { attempts, baseMs, maxMs })` — backoff exponencial
+* `CircuitBreaker` — CLOSED / OPEN / HALF_OPEN en memoria
+* `Bulkhead` — limita llamadas concurrentes al provider
 
 ### Provider fake — modo simulador serio
 
-El fake deja de ser "un `setTimeout` con delay" y se vuelve un **simulador de fallos**:
+El fake deja de ser "un `setTimeout` con delay" y se vuelve un **simulador de fallos** :
 
-**Config extendida**:
+ **Config extendida** :
+
 ```env
 FAKE_PAYMENT_OUTCOME=approved|failed|pending|flaky|timeout
 FAKE_PAYMENT_DELAY_MS=3000
@@ -192,7 +276,7 @@ FAKE_PAYMENT_FAILURE_RATE=0.10   # 10% probabilidad de fallo aleatorio
 FAKE_PAYMENT_SEED=order-123      # opcional: determinismo por orden
 ```
 
-**Comportamiento**:
+ **Comportamiento** :
 
 | Outcome | Simula |
 |---|---|
@@ -203,7 +287,8 @@ FAKE_PAYMENT_SEED=order-123      # opcional: determinismo por orden
 | `timeout` | Nunca responde → dispara el `withTimeout` |
 | `seed` | Mismo `orderId` → mismo resultado (para tests reproducibles) |
 
-**El fake se envuelve con la capa de resiliencia**:
+ **El fake se envuelve con la capa de resiliencia** :
+
 ```ts
 async generatePaymentLink(order) {
   return this.circuitBreaker.exec(() =>
@@ -221,42 +306,42 @@ async generatePaymentLink(order) {
 
 ### Aplicación
 
-- `CreatePaymentLinkUseCase` gana timeout explícito
-- `HandleWebhookUseCase` gana validación de firma (HMAC)
+* `CreatePaymentLinkUseCase` gana timeout explícito
+* `HandleWebhookUseCase` gana validación de firma (HMAC)
 
 ### Presentación
 
-- `POST /payments/webhook` — valida `X-Signature` contra `WEBHOOK_SECRET`
-- Webhook idempotente: guardar `providerEventId` procesados en Redis (TTL 24h)
+* `POST /payments/webhook` — valida `X-Signature` contra `WEBHOOK_SECRET`
+* Webhook idempotente: guardar `providerEventId` procesados en Redis (TTL 24h)
 
 ### Observabilidad
 
-- Contador `payment_failures_total{reason}` — separa `timeout` / `rejected` / `circuit_open`
-- Contador `payment_link_generated_total`
-- Gauge `payment_circuit_breaker_state` (0 cerrado, 1 half, 2 abierto)
+* Contador `payment_failures_total{reason}` — separa `timeout` / `rejected` / `circuit_open`
+* Contador `payment_link_generated_total`
+* Gauge `payment_circuit_breaker_state` (0 cerrado, 1 half, 2 abierto)
 
-**Exit criteria**: con `FAKE_PAYMENT_TIMEOUT_RATE=0.20` y 100 órdenes, el error rate real excluyendo simulados < 2%. El circuit breaker se abre tras 5 fallos consecutivos y se recupera.
+ **Exit criteria** : con `FAKE_PAYMENT_TIMEOUT_RATE=0.20` y 100 órdenes, el error rate real excluyendo simulados < 2%. El circuit breaker se abre tras 5 fallos consecutivos y se recupera.
 
 ---
 
 ## FASE 3 — Provider real (MercadoPago)
 
-**Objetivo**: reemplazar el fake por integración real sin tocar dominio.
+ **Objetivo** : reemplazar el fake por integración real sin tocar dominio.
 
 ### Infraestructura
 
-- `MercadoPagoProvider` completo:
-  - OAuth con `MERCADOPAGO_ACCESS_TOKEN`
-  - Crear preference (`/checkout/preferences`)
-  - Devolver `init_point`
-  - Validar firma del webhook (`x-signature` con secret)
-  - Verificar pago contra API antes de confiar en el webhook
-- Persistencia de `providerRef` (id externo del pago) en `Order` o tabla aparte
+* `MercadoPagoProvider` completo:
+  + OAuth con `MERCADOPAGO_ACCESS_TOKEN`
+  + Crear preference (`/checkout/preferences`)
+  + Devolver `init_point`
+  + Validar firma del webhook (`x-signature` con secret)
+  + Verificar pago contra API antes de confiar en el webhook
+* Persistencia de `providerRef` (id externo del pago) en `Order` o tabla aparte
 
 ### Presentación
 
-- `POST /payments/webhook` — parsea formato MercadoPago (`data.id`, `type`, `action`)
-- `GET /payments/:orderId/status` — consulta el estado actualizado al provider (pull fallback)
+* `POST /payments/webhook` — parsea formato MercadoPago (`data.id`,  `type`,  `action`)
+* `GET /payments/:orderId/status` — consulta el estado actualizado al provider (pull fallback)
 
 ### Config
 
@@ -266,20 +351,20 @@ MERCADOPAGO_ACCESS_TOKEN=...
 MERCADOPAGO_WEBHOOK_SECRET=...
 ```
 
-**Exit criteria**: sandbox de MercadoPago → crear preferencia, pagar con tarjeta de prueba, recibir webhook, orden `PAID`.
+ **Exit criteria** : sandbox de MercadoPago → crear preferencia, pagar con tarjeta de prueba, recibir webhook, orden `PAID` .
 
 ---
 
 ## FASE 4 / Backlog
 
-- Métodos de pago múltiples (Stripe, PayPal) con selector por región
-- Refunds (parciales y totales)
-- Reembolsos automáticos desde `PAID → CANCELLED`
-- 3DS / SCA (autenticación fuerte del cliente)
-- Guardar métodos de pago (tokens) para one-click
-- Facturación electrónica
-- Webhook replay attack protection (nonce + timestamp)
-- Separación de Billing como BC propio (si el volumen lo justifica)
+* Métodos de pago múltiples (Stripe, PayPal) con selector por región
+* Refunds (parciales y totales)
+* Reembolsos automáticos desde `PAID → CANCELLED`
+* 3DS / SCA (autenticación fuerte del cliente)
+* Guardar métodos de pago (tokens) para one-click
+* Facturación electrónica
+* Webhook replay attack protection (nonce + timestamp)
+* Separación de Billing como BC propio (si el volumen lo justifica)
 
 ---
 
@@ -287,28 +372,28 @@ MERCADOPAGO_WEBHOOK_SECRET=...
 
 ### D1. ¿Existe una entidad `Payment` persistida?
 
-**Hoy**: no. El pago vive como `Order.paymentStatus` + `Order.paymentUrl`.
+ **Hoy** : no. El pago vive como `Order.paymentStatus` + `Order.paymentUrl` .
 
-- **A favor de no persistir**: menos tablas, MVP simple.
-- **A favor de persistir**: auditoría (¿cuántos intentos? ¿qué providerRef?), soporte de múltiples intentos de pago, soporte de múltiples métodos.
+* **A favor de no persistir** : menos tablas, MVP simple.
+* **A favor de persistir** : auditoría (¿cuántos intentos? ¿qué providerRef?), soporte de múltiples intentos de pago, soporte de múltiples métodos.
 
-**Recomendación**: **no en MVP**, sí en Fase 3 (cuando entrás a MercadoPago real, necesitás `providerRef`). En ese momento se crea tabla `payments(id, orderId, provider, providerRef, status, amount, createdAt)`.
+ **Recomendación**: **no en MVP** , sí en Fase 3 (cuando entrás a MercadoPago real, necesitás `providerRef` ). En ese momento se crea tabla `payments(id, orderId, provider, providerRef, status, amount, createdAt)` .
 
 ### D2. ¿Síncrono o asíncrono?
 
-**Recomendación**: **asíncrono** (link de pago). Corregir la nota. Documentar en ADR por qué el consejo "no asincrónico" no aplica al modelo MercadoPago.
+ **Recomendación**: **asíncrono** (link de pago). Corregir la nota. Documentar en ADR por qué el consejo "no asincrónico" no aplica al modelo MercadoPago.
 
 ### D3. ¿El fake simula 20% timeout / 10% fallo siempre, o configurable?
 
-Tus notas dicen 20%/10% fijo. **Recomendación**: **configurable**, con esos valores como default. Razón: en tests de happy path querés 0%, en tests de resiliencia querés 100%.
+Tus notas dicen 20%/10% fijo. **Recomendación**: **configurable** , con esos valores como default. Razón: en tests de happy path querés 0%, en tests de resiliencia querés 100%.
 
 ### D4. ¿Firma de webhook en MVP o v2?
 
-**Recomendación**: **v2**. En MVP el fake es interno y no puede ser "atacado". En v3 con MercadoPago real, es obligatorio.
+ **Recomendación**: **v2** . En MVP el fake es interno y no puede ser "atacado". En v3 con MercadoPago real, es obligatorio.
 
-### D5. ¿`FakePaymentProvider` sigue siendo "fake" o se renombra a "simulator"?
+### D5. ¿ `FakePaymentProvider` sigue siendo "fake" o se renombra a "simulator"?
 
-**Recomendación**: renombrar a `SimulatedPaymentProvider` o `FaultInjectorProvider`. La palabra "fake" sugiere "menos serio". El simulador es una **herramienta de calidad** tan importante como el provider real.
+ **Recomendación**: renombrar a `SimulatedPaymentProvider` o `FaultInjectorProvider` . La palabra "fake" sugiere "menos serio". El simulador es una **herramienta de calidad** tan importante como el provider real.
 
 ---
 
@@ -316,9 +401,9 @@ Tus notas dicen 20%/10% fijo. **Recomendación**: **configurable**, con esos val
 
 | Nota | Código | Reconciliación |
 |---|---|---|
-| Síncrono en checkout | Asíncrono con link | **Asíncrono**, corregir nota |
+| Síncrono en checkout | Asíncrono con link | **Asíncrono** , corregir nota |
 | Entidad `Payment` | No existe | No en MVP, sí en Fase 3 |
-| `ProcessPayment` use case | No existe (hay `CreatePaymentLink` + `HandleWebhook`) | Correcto así — son dos responsabilidades |
+| `ProcessPayment` use case | No existe (hay `CreatePaymentLink` + `HandleWebhook` ) | Correcto así — son dos responsabilidades |
 | 20% timeout / 10% fail fijo | No existe | Configurable en v2 |
 | Mock de pasarela | Sí, `FakePaymentProvider` | OK |
 | No saga / no event bus | Cumplido | OK |
@@ -338,7 +423,7 @@ Tus notas dicen 20%/10% fijo. **Recomendación**: **configurable**, con esos val
 | 7 | Seed determinístico por `orderId` | idem | 2 |
 | 8 | Métrica `payment_failures_total{reason}` | `infra/metrics/` | 2 |
 | 9 | Firma HMAC de webhook | `payments.controller.ts` | 2 |
-| 10 | Webhook idempotente (Redis `providerEventId`) | `handle-webhook.use-case.ts` | 2 |
+| 10 | Webhook idempotente (Redis `providerEventId` ) | `handle-webhook.use-case.ts` | 2 |
 | 11 | `MercadoPagoProvider` completo | `infra/providers/` | 3 |
 | 12 | Persistir `providerRef` | nueva tabla `payments` | 3 |
 
@@ -371,6 +456,7 @@ src/modules/04payments/
 ```
 
 Y como dependencia:
+
 ```
 src/infra/resilience/                ← compartido con Shipping
 ├── with-timeout.ts
@@ -383,18 +469,18 @@ src/infra/resilience/                ← compartido con Shipping
 
 ## 9. Sobre el "tiene que ser fake"
 
-Entiendo la incomodidad. La forma de sacártela es dejar de llamarlo "fake" y pensarlo como **simulador de fallos**.
+Entiendo la incomodidad. La forma de sacártela es dejar de llamarlo "fake" y pensarlo como **simulador de fallos** .
 
 Un simulador bien hecho te da:
 
-1. **Reproducibilidad**: mismo `orderId` → mismo resultado (con seed)
-2. **Control de caos**: forzar timeout, forzar circuit open, forzar fallo intermitente
-3. **Métricas de resiliencia**: con 20% de timeout simulado, ¿el sistema se recupera?
-4. **Tests deterministas**: `FAKE_PAYMENT_OUTCOME=failed` en un test no debería depender del azar
+1. **Reproducibilidad** : mismo `orderId` → mismo resultado (con seed)
+2. **Control de caos** : forzar timeout, forzar circuit open, forzar fallo intermitente
+3. **Métricas de resiliencia** : con 20% de timeout simulado, ¿el sistema se recupera?
+4. **Tests deterministas** : `FAKE_PAYMENT_OUTCOME=failed` en un test no debería depender del azar
 
-Un `FakePaymentProvider` que solo hace `setTimeout(3s)` **no es un simulador**, es un placeholder. La diferencia es cuánta diversidad de fallos puede inyectar.
+Un `FakePaymentProvider` que solo hace `setTimeout(3s)` **no es un simulador** , es un placeholder. La diferencia es cuánta diversidad de fallos puede inyectar.
 
-**El simulador es el activo más valioso de este BC en MVP.** El provider real es la Fase 3. El simulador es el que te permite demostrar que el sistema es resiliente *hoy*.
+ **El simulador es el activo más valioso de este BC en MVP.** El provider real es la Fase 3. El simulador es el que te permite demostrar que el sistema es resiliente*hoy*.
 
 ---
 

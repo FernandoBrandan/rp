@@ -6,18 +6,27 @@ on:
   pull_request:
     branches: [main]
 
+# Cancela runs viejos del mismo PR/branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NODE_ENV: test
+  CI: true
+
 jobs:
-  lint-build-unit:
-    name: Lint · Build · Unit
+  quality:
+    name: Lint · Typecheck · Unit
     runs-on: ubuntu-latest
     timeout-minutes: 10
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version-file: '.nvmrc'
           cache: 'npm'
@@ -28,29 +37,41 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      - name: Build
-        run: npm run build
+      - name: Typecheck
+        run: npx tsc --noEmit
 
-      - name: Unit tests
-        run: npm run test:unit
+      - name: Unit tests + coverage
+        run: npm run test:unit -- --coverage
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage/
+          retention-days: 7
 
   integration:
     name: Integration
     runs-on: ubuntu-latest
     timeout-minutes: 15
-
+    needs: quality
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version-file: '.nvmrc'
           cache: 'npm'
 
       - name: Install deps
         run: npm ci
+
+      - name: Cache testcontainers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/testcontainers
+          key: tc-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
 
       - name: Integration tests
         run: npm run test:integration
@@ -59,13 +80,11 @@ jobs:
     name: E2E
     runs-on: ubuntu-latest
     timeout-minutes: 15
-
+    needs: quality
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version-file: '.nvmrc'
           cache: 'npm'
@@ -73,5 +92,46 @@ jobs:
       - name: Install deps
         run: npm ci
 
+      - name: Cache testcontainers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/testcontainers
+          key: tc-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
       - name: E2E tests
         run: npm run test:e2e
+
+      - name: Upload e2e logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-logs
+          path: |
+            /tmp/_resp
+            logs/
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: quality
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Upload dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          retention-days: 3
