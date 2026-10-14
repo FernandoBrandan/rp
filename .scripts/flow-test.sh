@@ -44,37 +44,44 @@ STATE_DIR=$(mktemp -d)
 trap 'rm -rf "$STATE_DIR"' EXIT
 
 # ─── HTTP helper ────────────────────────────────────────────────────
-# Devuelve body, escribe status a $STATE_DIR/.status
+# Escribe status a un archivo por worker para evitar race conditions en modo -p
+# Devuelve body por stdout.
 http() {
   local method="$1" path="$2" body="${3:-}" token="${4:-}"
+  local sf="$STATE_DIR/.status.${WORKER_ID:-main}"
   local args=(-s -w '\n%{http_code}' -X "$method" "$BASE_URL$path")
   [[ -n "$token" ]] && args+=(-H "Authorization: Bearer $token")
   [[ -n "$body"  ]] && args+=(-H 'content-type: application/json' -d "$body")
   local raw; raw=$(curl "${args[@]}")
-  echo "$raw" | tail -n1 > "$STATE_DIR/.status"
+  echo "$raw" | tail -n1 > "$sf"
   echo "$raw" | sed '$d'
 }
-status() { cat "$STATE_DIR/.status"; }
+
+status() { cat "$STATE_DIR/.status.${WORKER_ID:-main}"; }
 
 uuid() { cat /proc/sys/kernel/random/uuid; }
+
+# Exportar para que estén disponibles en subshells (parallel mode)
+export -f http status uuid
+export BASE_URL STATE_DIR
 
 # ─── Pre-checks ─────────────────────────────────────────────────────
 section "Pre-checks"
 
-LIVE=$(http GET /health/live)
-[[ "$(status)" == "200" ]] && ok "health/live OK" || { fail "health/live KO — ¿app corriendo en $BASE_URL?"; exit 1; }
+WORKER_ID=main http GET /health/live > /dev/null
+[[ "$(WORKER_ID=main status)" == "200" ]] && ok "health/live OK" || { fail "health/live KO — ¿app corriendo en $BASE_URL?"; exit 1; }
 command -v jq >/dev/null || { fail "jq requerido"; exit 1; }
 info "N=$N  paralelo=$PARALLEL  contention=$CONTENTION"
 
 # ─── FASE 1: admin login ────────────────────────────────────────────
 section "1. Admin login"
 
-BODY=$(http POST /auth/login "{\"email\":\"$ADMIN_EMAIL\",\"password\":\"$ADMIN_PASS\"}")
-if [[ "$(status)" == "200" ]]; then
+BODY=$(WORKER_ID=main http POST /auth/login "{\"email\":\"$ADMIN_EMAIL\",\"password\":\"$ADMIN_PASS\"}")
+if [[ "$(WORKER_ID=main status)" == "200" ]]; then
   ADMIN_TOKEN=$(echo "$BODY" | jq -r '.accessToken')
   ok "admin login OK"
 else
-  fail "admin login KO ($(status)) — ¿corriste 'npm run seed:dev'?"
+  fail "admin login KO ($(WORKER_ID=main status)) — ¿corriste 'npm run seed:dev'?"
   exit 1
 fi
 
@@ -83,26 +90,24 @@ section "2. Productos (admin)"
 
 PRODUCTS_FILE="$STATE_DIR/products.tsv"
 if $CONTENTION; then
-  # 1 producto para todos — stock = N * 2 (por si todos compran 2)
   SERIAL="PROD-FLOW-CONTENTION-$(date +%s)"
-  BODY=$(http POST /products "{\"serial\":\"$SERIAL\",\"name\":\"Contention Product\",\"price\":100,\"stock\":$((N*2))}" "$ADMIN_TOKEN")
-  if [[ "$(status)" == "201" ]]; then
+  BODY=$(WORKER_ID=main http POST /products "{\"serial\":\"$SERIAL\",\"name\":\"Contention Product\",\"price\":100,\"stock\":$((N*2))}" "$ADMIN_TOKEN")
+  if [[ "$(WORKER_ID=main status)" == "201" ]]; then
     PID=$(echo "$BODY" | jq -r '.id')
     printf "1\t%s\t%s\t%d\n" "$SERIAL" "$PID" $((N*2)) > "$PRODUCTS_FILE"
     ok "1 producto creado (stock=$((N*2))) — modo contención"
   else
-    fail "POST /products KO ($(status))"; exit 1
+    fail "POST /products KO ($(WORKER_ID=main status))"; exit 1
   fi
 else
-  # N productos, 1 por usuario
   for i in $(seq 1 "$N"); do
     SERIAL="PROD-FLOW-${i}-$(date +%s%N | tail -c 6)"
-    BODY=$(http POST /products "{\"serial\":\"$SERIAL\",\"name\":\"Product $i\",\"price\":100,\"stock\":10}" "$ADMIN_TOKEN")
-    if [[ "$(status)" == "201" ]]; then
+    BODY=$(WORKER_ID=main http POST /products "{\"serial\":\"$SERIAL\",\"name\":\"Product $i\",\"price\":100,\"stock\":10}" "$ADMIN_TOKEN")
+    if [[ "$(WORKER_ID=main status)" == "201" ]]; then
       PID=$(echo "$BODY" | jq -r '.id')
       printf "%d\t%s\t%s\t%d\n" "$i" "$SERIAL" "$PID" 10 >> "$PRODUCTS_FILE"
     else
-      fail "POST /products [$i] KO ($(status))"
+      fail "POST /products [$i] KO ($(WORKER_ID=main status))"
     fi
   done
   CREATED=$(wc -l < "$PRODUCTS_FILE")
@@ -125,19 +130,33 @@ register_one() {
   local pass="User1234!"
 
   http POST /auth/register "{\"email\":\"$email\",\"password\":\"$pass\"}" > /dev/null
-  [[ "$(status)" == "201" ]] || { echo "REG_KO:$i:$(status)" >&2; return 1; }
+  if [[ "$(status)" != "201" ]]; then
+    echo "REG_KO:$i:$(status)" >&2
+    return 1
+  fi
 
   local body
   body=$(http POST /auth/login "{\"email\":\"$email\",\"password\":\"$pass\"}")
-  [[ "$(status)" == "200" ]] || { echo "LOGIN_KO:$i:$(status)" >&2; return 1; }
+  if [[ "$(status)" != "200" ]]; then
+    echo "LOGIN_KO:$i:$(status)" >&2
+    return 1
+  fi
 
   local token; token=$(echo "$body" | jq -r '.accessToken')
   printf "%d\t%s\t%s\n" "$i" "$email" "$token" >> "$USERS_FILE"
 }
-export -f register_one http status uuid
-export BASE_URL STATE_DIR
+export -f register_one
 
- 
+if $PARALLEL; then
+  for i in $(seq 1 "$N"); do
+    ( WORKER_ID="$i" register_one "$i" ) &
+  done
+  wait
+else
+  for i in $(seq 1 "$N"); do
+    WORKER_ID=main register_one "$i"
+  done
+fi
 
 USERS_OK=$(wc -l < "$USERS_FILE")
 [[ "$USERS_OK" == "$N" ]] && ok "$N/$N usuarios listos" || fail "$USERS_OK/$N usuarios listos"
@@ -153,7 +172,6 @@ flow_one() {
   local token; token=$(awk -v k="$i" '$1==k{print $3}' "$USERS_FILE")
   [[ -z "$token" ]] && return 1
 
-  # Elegir producto: en contención siempre el mismo; si no, el i-ésimo
   local pid
   if [[ "$CONTENTION" == "true" ]]; then
     pid=$(awk 'NR==1{print $3}' "$PRODUCTS_FILE")
@@ -162,21 +180,35 @@ flow_one() {
   fi
   [[ -z "$pid" ]] && return 1
 
-  # Add to cart
   http POST /cart/items "{\"item\":{\"productId\":\"$pid\",\"quantity\":2}}" "$token" > /dev/null
-  [[ "$(status)" == "201" ]] || { echo "CART_KO:$i:$(status)" >&2; return 1; }
+  if [[ "$(status)" != "201" ]]; then
+    echo "CART_KO:$i:$(status)" >&2
+    return 1
+  fi
 
-  # Create order
   local idem="flow-$(uuid)"
   local body
   body=$(http POST /orders "{\"idempotencyKey\":\"$idem\",\"items\":[{\"productId\":\"$pid\",\"quantity\":2,\"price\":100}]}" "$token")
-  [[ "$(status)" == "201" ]] || { echo "ORDER_KO:$i:$(status)" >&2; return 1; }
+  if [[ "$(status)" != "201" ]]; then
+    echo "ORDER_KO:$i:$(status)" >&2
+    return 1
+  fi
 
   local oid; oid=$(echo "$body" | jq -r '.id')
   printf "%d\t%s\t%s\t%s\t%s\n" "$i" "$token" "$oid" "$idem" "$pid" >> "$ORDERS_FILE"
 }
 export -f flow_one
- 
+
+if $PARALLEL; then
+  for i in $(seq 1 "$N"); do
+    ( WORKER_ID="$i" flow_one "$i" ) &
+  done
+  wait
+else
+  for i in $(seq 1 "$N"); do
+    WORKER_ID=main flow_one "$i"
+  done
+fi
 
 ORDERS_OK=$(wc -l < "$ORDERS_FILE")
 [[ "$ORDERS_OK" == "$N" ]] && ok "$N/$N órdenes creadas" || fail "$ORDERS_OK/$N órdenes creadas"
@@ -192,7 +224,7 @@ section "6. Verificación"
 
 PAID_OK=0; PAID_KO=0
 while IFS=$'\t' read -r i token oid idem pid; do
-  body=$(http GET "/orders/$oid" "" "$token")
+  body=$(WORKER_ID=main http GET "/orders/$oid" "" "$token")
   st=$(echo "$body" | jq -r '.status')
   if [[ "$st" == "PAID" ]]; then
     PAID_OK=$((PAID_OK+1))
@@ -209,7 +241,7 @@ section "7. Verificación de stock"
 
 STOCK_OK=0; STOCK_KO=0
 while IFS=$'\t' read -r i serial pid initial; do
-  body=$(http GET "/products/$serial")
+  body=$(WORKER_ID=main http GET "/products/$serial")
   actual=$(echo "$body" | jq -r '.stock')
   expected=$((initial - 2))
   if [[ "$actual" == "$expected" ]]; then
@@ -225,14 +257,17 @@ done < "$PRODUCTS_FILE"
 # ─── FASE 8: idempotencia (spot check) ──────────────────────────────
 section "8. Idempotencia (1 caso)"
 
-read -r i token oid idem pid < <(head -n1 "$ORDERS_FILE")
-# Repetir POST con el mismo idempotencyKey
-body=$(http POST /orders "{\"idempotencyKey\":\"$idem\",\"items\":[{\"productId\":\"$pid\",\"quantity\":2,\"price\":100}]}" "$token")
-new_id=$(echo "$body" | jq -r '.id')
-if [[ "$new_id" == "$oid" ]]; then
-  ok "mismo idempotencyKey → misma orden ($oid)"
+if [[ -s "$ORDERS_FILE" ]]; then
+  read -r i token oid idem pid < <(head -n1 "$ORDERS_FILE")
+  body=$(WORKER_ID=main http POST /orders "{\"idempotencyKey\":\"$idem\",\"items\":[{\"productId\":\"$pid\",\"quantity\":2,\"price\":100}]}" "$token")
+  new_id=$(echo "$body" | jq -r '.id')
+  if [[ "$new_id" == "$oid" ]]; then
+    ok "mismo idempotencyKey → misma orden ($oid)"
+  else
+    fail "idempotencia rota: esperado $oid, recibido $new_id"
+  fi
 else
-  fail "idempotencia rota: esperado $oid, recibido $new_id"
+  fail "sin órdenes para verificar idempotencia"
 fi
 
 # ─── RESUMEN ────────────────────────────────────────────────────────
