@@ -24,9 +24,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout
 
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node
         with:
           node-version-file: ".nvmrc"
           cache: "npm"
@@ -45,7 +45,7 @@ jobs:
 
       - name: Upload coverage
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact
         with:
           name: coverage
           path: coverage/
@@ -57,9 +57,9 @@ jobs:
     timeout-minutes: 15
     needs: quality
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout
 
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node
         with:
           node-version-file: ".nvmrc"
           cache: "npm"
@@ -82,9 +82,9 @@ jobs:
     timeout-minutes: 15
     needs: quality
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout
 
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node
         with:
           node-version-file: ".nvmrc"
           cache: "npm"
@@ -103,7 +103,7 @@ jobs:
 
       - name: Upload e2e logs
         if: failure()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact
         with:
           name: e2e-logs
           path: |
@@ -116,9 +116,9 @@ jobs:
     timeout-minutes: 10
     needs: quality
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout
 
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node
         with:
           node-version-file: ".nvmrc"
           cache: "npm"
@@ -130,7 +130,7 @@ jobs:
         run: npm run build
 
       - name: Upload dist
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact
         with:
           name: dist
           path: dist/

@@ -1,8 +1,7 @@
 import { INestApplication } from '@nestjs/common'
 import { NestFactory } from '@nestjs/core'
 import { randomUUID } from 'crypto'
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-import request = require('supertest')
+import * as request from 'supertest'
 import { PostgreSqlContainer, StartedPostgreSqlContainer } from '@testcontainers/postgresql'
 import { RedisContainer, StartedRedisContainer } from '@testcontainers/redis'
 
