@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  HttpCode,
   Inject,
   NotFoundException,
   Param,
@@ -27,15 +28,18 @@ import { ORDER_REPOSITORY } from '@infra/tokens'
 import { OrderMapper } from '../application/mappers/order.mapper'
 import { AuthGuard } from '@infra/auth-infra/guards/jwt-auth.guard'
 import { CurrentUser } from '@infra/auth-infra/decorators/current-user.decorator'
+import { CancelOrderUseCase } from '../application/use-cases/cancel-order.use-case'
 
 @ApiTags('orders')
 @UseGuards(AuthGuard)
 @Controller('orders')
 export class OrderController {
   constructor(
-    private readonly createOrderUseCase: CreateOrderUseCase,
     @Inject(ORDER_REPOSITORY)
     private readonly orderRepository: OrderRepository,
+
+    private readonly createOrderUseCase: CreateOrderUseCase,
+    private readonly cancelOrderUseCase: CancelOrderUseCase,
   ) {}
 
   @Post()
@@ -95,5 +99,24 @@ export class OrderController {
     }
 
     return OrderMapper.toResponse(order)
+  }
+
+  @Post(':id/cancel')
+  @HttpCode(200)
+  @ApiOperation({
+    summary: 'Cancelar una orden',
+    description:
+      'Idempotente: si ya está CANCELLED, devuelve la orden sin recomponer. ' +
+      'Si estaba PAID, dispara restock + refund. ' +
+      'FAILED y COMPLETED no son cancelables (409).',
+  })
+  @ApiOkResponse({ description: 'Orden cancelada', type: OrderResponseDTO })
+  @ApiNotFoundResponse({ description: 'Orden no encontrada o no pertenece al usuario' })
+  @ApiConflictResponse({ description: 'La orden no puede cancelarse en su estado actual' })
+  async cancel(
+    @CurrentUser('sub') userId: string,
+    @Param('id') id: string,
+  ): Promise<OrderResponseDTO> {
+    return this.cancelOrderUseCase.execute(userId, id)
   }
 }

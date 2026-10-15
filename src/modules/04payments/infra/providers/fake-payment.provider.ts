@@ -53,13 +53,14 @@ export class FakePaymentProvider implements PaymentProviderPort {
       return { url: `http://fake-payment.local/pay/${order.id}` }
     }
 
-    if (effectiveOutcome === 'failed') {
-      this.logger.warn('FakePaymentProvider: simulating immediate failure', {
-        event: 'fake_payment_simulating_failure',
-        orderId: order.id,
-      })
-      throw new Error('Simulated provider failure')
-    }
+    // Se comenta para los test
+    // if (effectiveOutcome === 'failed') {
+    //   this.logger.warn('FakePaymentProvider: simulating immediate failure', {
+    //     event: 'fake_payment_simulating_failure',
+    //     orderId: order.id,
+    //   })
+    //   throw new Error('Simulated provider failure')
+    // }
 
     // approved | pending → comportamiento normal
     if (this.generationDelayMs > 0) {

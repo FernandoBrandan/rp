@@ -7,7 +7,10 @@ import { Repository } from 'typeorm'
 import { Logger } from '@infra/logger/logger.interface'
 import { LOGGER } from '@infra/tokens'
 import { StockPort } from '@order/application/ports/stock.port'
-import { StockReservationEntity } from '../persistence/stock-reservation.orm-entity'
+import {
+  ReservationStatus,
+  StockReservationEntity,
+} from '../persistence/stock-reservation.orm-entity'
 import { InsufficientStockException } from '@common/exceptions/insufficient-stock.exception'
 
 @Injectable()
@@ -107,6 +110,52 @@ export class StockReservationAdapter implements StockPort {
       reservation.status = 'RELEASED'
       await manager.save(reservation)
       this.logger.info('Stock released', { reservationId })
+    })
+  }
+
+  async getReservationStatus(reservationId: string): Promise<ReservationStatus | null> {
+    const reservation = await this.stockReservationRepo.findOne({
+      where: { id: reservationId },
+    })
+    return reservation ? (reservation.status as ReservationStatus) : null
+  }
+
+  async restockReservation(reservationId: string): Promise<void> {
+    await this.dataSource.transaction(async (manager) => {
+      const reservation = await manager.findOne(StockReservationEntity, {
+        where: { id: reservationId },
+        lock: { mode: 'pessimistic_write' },
+      })
+
+      if (!reservation) {
+        throw new Error(`Reservation ${reservationId} not found`)
+      }
+
+      if (reservation.status === 'RELEASED') {
+        this.logger.info('Reservation already released, skipping restock', { reservationId })
+        return
+      }
+
+      // RESERVED o CONFIRMED → devolver stock y marcar RELEASED
+      const previousStatus = reservation.status
+
+      for (const item of reservation.items) {
+        await manager
+          .createQueryBuilder()
+          .update('products')
+          .set({ stock: () => `stock + ${item.quantity}` })
+          .where('id = :id', { id: item.productId })
+          .execute()
+      }
+
+      reservation.status = 'RELEASED'
+      await manager.save(reservation)
+
+      this.logger.info('Stock restocked', {
+        event: 'stock_restocked',
+        reservationId,
+        previousStatus,
+      })
     })
   }
 }

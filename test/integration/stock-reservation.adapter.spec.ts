@@ -170,4 +170,41 @@ describe('StockReservationAdapter (integration)', () => {
       'Cannot release confirmed reservation',
     )
   })
+
+  describe('restockReservation', () => {
+    it('devuelve stock y marca RELEASED desde RESERVED', async () => {
+      await insertProduct('prod-1', 10)
+      const id = await adapter.reserveStock([{ productId: 'prod-1', quantity: 3 }], 'ORDER-1')
+
+      await adapter.restockReservation(id)
+
+      expect(await getStock('prod-1')).toBe(10)
+      expect(await getReservationStatus(id)).toBe('RELEASED')
+    })
+
+    it('devuelve stock desde CONFIRMED (cancelación de orden PAID)', async () => {
+      await insertProduct('prod-1', 10)
+      const id = await adapter.reserveStock([{ productId: 'prod-1', quantity: 3 }], 'ORDER-1')
+      await adapter.confirmReservation(id)
+
+      await adapter.restockReservation(id)
+
+      expect(await getStock('prod-1')).toBe(10)
+      expect(await getReservationStatus(id)).toBe('RELEASED')
+    })
+
+    it('es idempotente si ya está RELEASED', async () => {
+      await insertProduct('prod-1', 10)
+      const id = await adapter.reserveStock([{ productId: 'prod-1', quantity: 3 }], 'ORDER-1')
+
+      await adapter.restockReservation(id)
+      await adapter.restockReservation(id) // no debe duplicar
+
+      expect(await getStock('prod-1')).toBe(10)
+    })
+
+    it('falla si la reserva no existe', async () => {
+      await expect(adapter.restockReservation('no-existe')).rejects.toThrow()
+    })
+  })
 })

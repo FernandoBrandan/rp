@@ -29,6 +29,8 @@ export const ORDER_REPOSITORY = Symbol('ORDER_REPOSITORY')
 export const ORDER_FINDER = Symbol('ORDER_FINDER')
 export const ORDER_PAYMENT_STATUS = Symbol('ORDER_PAYMENT_STATUS')
 
+export const REFUND_SERVICE = Symbol('REFUND_SERVICE')
 // ---------------------------------------------------------------------------------
 
 export const PAYMENT_PROVIDER = Symbol('PAYMENT_PROVIDER')
+export const PAYMENT_CIRCUIT_BREAKER_HEALTH = Symbol('PAYMENT_CIRCUIT_BREAKER_HEALTH')

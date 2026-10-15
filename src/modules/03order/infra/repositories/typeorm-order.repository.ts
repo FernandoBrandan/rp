@@ -3,10 +3,11 @@ import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { InfrastructureException } from '@common/exceptions/infrastructure.exception'
-import { Order } from '@order/domain/order.entity'
+import { Order } from '@main/modules/03order/domain/order.entity'
 import { OrderRepository } from '@order/domain/repositories/order.repository'
 import { OrderEntity } from '../persistence/order.orm-entity'
 import { OrderOrmMapper } from '../persistence/order.orm.mapper'
+import { OrderStatus } from '../../domain/enums/orderStatus.enum'
 
 @Injectable()
 export class TypeOrmOrderRepository implements OrderRepository {
@@ -59,6 +60,25 @@ export class TypeOrmOrderRepository implements OrderRepository {
     try {
       const orm = await this.ormRepo.findOne({ where: { idempotencyKey } })
       return orm ? OrderOrmMapper.toDomain(orm) : null
+    } catch (error) {
+      this.handleConnectionError(error)
+    }
+  }
+
+  async findRecentByStatuses(
+    statuses: OrderStatus[],
+    since: Date,
+    limit: number,
+  ): Promise<Order[]> {
+    try {
+      const orms = await this.ormRepo
+        .createQueryBuilder('o')
+        .where('o.status IN (:...statuses)', { statuses })
+        .andWhere('o.updatedAt >= :since', { since })
+        .orderBy('o.updatedAt', 'ASC')
+        .limit(limit)
+        .getMany()
+      return orms.map(OrderOrmMapper.toDomain)
     } catch (error) {
       this.handleConnectionError(error)
     }

@@ -29,18 +29,18 @@ export class HealthController {
   @Get('ready')
   @ApiOperation({
     summary: 'Readiness — ¿puede atender tráfico?',
-    description: 'Chequea DB y Redis. Devuelve 503 si alguno está caído.',
+    description: 'Chequea DB, Redis y estado del Circuit Breaker de pagos.',
   })
   @ApiOkResponse({ description: 'Todos los componentes operativos' })
   @ApiServiceUnavailableResponse({
-    description: 'Al menos un componente caído',
+    description: 'Al menos un componente crítico caído',
   })
   async ready() {
-    const checks: Record<string, { status: 'up' } | { status: 'down'; error: string }> = {}
-
+    const checks: Record<string, any> = {}
     const results = await Promise.allSettled([
       this.healthService.checkDatabase(),
       this.healthService.checkRedis(),
+      this.healthService.checkPaymentCircuitBreaker(),
     ])
 
     checks.database =
@@ -53,9 +53,16 @@ export class HealthController {
         ? results[1].value
         : { status: 'down', error: (results[1].reason as Error).message }
 
-    const allUp = results.every((r) => r.status === 'fulfilled')
+    checks.paymentCircuitBreaker =
+      results[2].status === 'fulfilled'
+        ? results[2].value
+        : { status: 'down', error: (results[2].reason as Error).message }
 
-    if (!allUp) {
+    const dbUp = checks.database.status === 'up'
+    const redisUp = checks.redis.status === 'up'
+
+    // Si DB o Redis están down, el servicio no está listo para recibir tráfico
+    if (!dbUp || !redisUp) {
       throw new ServiceUnavailableException({
         status: 'error',
         checks,
@@ -64,7 +71,7 @@ export class HealthController {
     }
 
     return {
-      status: allUp ? 'ok' : 'error',
+      status: checks.paymentCircuitBreaker.status === 'degraded' ? 'degraded' : 'ok',
       checks,
       timestamp: new Date().toISOString(),
     }

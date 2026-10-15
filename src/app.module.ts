@@ -8,6 +8,7 @@ import { ConfigModule } from '@infra/config/config.module'
 import { DatabaseModule } from '@infra/database/database.module'
 import { HealthModule } from '@infra/health/health.module'
 import { LoggerModule } from '@infra/logger/logger.module'
+import { SchedulerModule } from './infra/scheduler/scheduler.module'
 
 import { AuthModule } from '@auth/auth.module'
 import { UserModule } from '@user/user.module'
@@ -23,6 +24,7 @@ import { PaymentModule } from '@payment/payment.module'
     DatabaseModule,
     HealthModule,
     LoggerModule,
+    SchedulerModule,
     EventEmitterModule.forRoot(),
     AuthModule,
     UserModule,

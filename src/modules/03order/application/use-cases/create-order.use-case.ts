@@ -2,7 +2,7 @@
 import { Injectable, Inject, HttpException, BadRequestException } from '@nestjs/common'
 import { Logger } from '@infra/logger/logger.interface'
 
-import { Order } from '@order/domain/order.entity'
+import { Order } from '@main/modules/03order/domain/order.entity'
 import { OrderItem } from '@order/domain/value-objects/orderItem.vo'
 import { Money } from '@common/domain/value-objects/money.vo'
 

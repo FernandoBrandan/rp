@@ -1,8 +1,12 @@
-import { Inject, Injectable } from '@nestjs/common'
+import { Inject, Injectable, Optional } from '@nestjs/common'
 import { DataSource } from 'typeorm'
 import { Logger } from '@infra/logger/logger.interface'
-import { LOGGER } from '@infra/tokens'
+import { LOGGER, PAYMENT_CIRCUIT_BREAKER_HEALTH } from '@infra/tokens'
 import { RedisService } from '@infra/redis/redis.service'
+
+export interface CircuitBreakerHealthPort {
+  getState: () => 'CLOSED' | 'OPEN' | 'HALF_OPEN'
+}
 
 @Injectable()
 export class HealthService {
@@ -12,6 +16,10 @@ export class HealthService {
 
     @Inject(LOGGER)
     private readonly logger: Logger,
+
+    @Optional()
+    @Inject(PAYMENT_CIRCUIT_BREAKER_HEALTH)
+    private readonly paymentCircuitBreaker?: CircuitBreakerHealthPort,
   ) {}
 
   async checkDatabase(): Promise<{ status: 'up' }> {
@@ -39,6 +47,17 @@ export class HealthService {
         error: error instanceof Error ? error.message : String(error),
       })
       throw withCause('Redis is down', error)
+    }
+  }
+
+  async checkPaymentCircuitBreaker(): Promise<{ status: 'up' | 'degraded'; state: string }> {
+    if (!this.paymentCircuitBreaker) {
+      return { status: 'up', state: 'UNKNOWN' }
+    }
+    const state = this.paymentCircuitBreaker.getState()
+    return {
+      status: state === 'OPEN' ? 'degraded' : 'up',
+      state,
     }
   }
 }

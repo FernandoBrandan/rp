@@ -1,6 +1,6 @@
 // test/unit/04payments/bulkheaded-payment.provider.spec.ts
 
-import { BulkheadedPaymentProvider } from '@payment/infra/providers/bulkheaded-payment.provider'
+import { BulkheadedPaymentProvider } from '@payment/infra/providerResilience/bulkheaded-payment.provider'
 import { BulkheadFullError } from '@infra/resilience'
 import {
   PaymentOrderSnapshot,

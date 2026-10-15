@@ -43,20 +43,10 @@ describe('CircuitBreakingPaymentProvider', () => {
       { threshold: 2, resetMs: 60_000 },
       makeLogger() as any,
     )
-
     await expect(provider.generatePaymentLink(order)).rejects.toThrow()
     await expect(provider.generatePaymentLink(order)).rejects.toThrow()
-
     expect(provider.getState()).toBe('OPEN')
 
-    const fn = jest.fn().mockResolvedValue({ url: 'never' })
-    const inner2 = makeInner(fn)
-    const provider = new CircuitBreakingPaymentProvider(
-      inner2,
-      { threshold: 2, resetMs: 60_000 },
-      makeLogger() as any,
-    )
-    // (usa el mismo provider)
     await expect(provider.generatePaymentLink(order)).rejects.toBeInstanceOf(CircuitOpenError)
   })
 

@@ -2,7 +2,7 @@ import { BadRequestException, HttpException } from '@nestjs/common'
 import { InsufficientStockException } from '@common/exceptions/insufficient-stock.exception'
 
 import { CreateOrderUseCase } from '@order/application/use-cases/create-order.use-case'
-import { Order } from '@order/domain/order.entity'
+import { Order } from '@main/modules/03order/domain/order.entity'
 import { OrderItem } from '@order/domain/value-objects/orderItem.vo'
 import { Money } from '@common/domain/value-objects/money.vo'
 import { OrderStatus } from '@order/domain/enums/orderStatus.enum'

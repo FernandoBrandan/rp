@@ -1,6 +1,6 @@
 // src/modules/01catalog/infra/persistence/product.orm-entity.ts
 
-import { Entity, Column, PrimaryColumn } from 'typeorm'
+import { Entity, Column, PrimaryColumn, UpdateDateColumn, CreateDateColumn } from 'typeorm'
 
 @Entity('products')
 export class ProductEntity {
@@ -21,4 +21,10 @@ export class ProductEntity {
 
   @Column()
   status: string
+
+  @CreateDateColumn()
+  createdAt: Date
+
+  @UpdateDateColumn()
+  updatedAt: Date
 }

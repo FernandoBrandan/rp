@@ -1,4 +1,4 @@
-import { Order } from '@order/domain/order.entity'
+import { Order } from '@main/modules/03order/domain/order.entity'
 import { Money } from '@common/domain/value-objects/money.vo'
 import { OrderItem } from '@order/domain/value-objects/orderItem.vo'
 import { OrderStatus } from '@order/domain/enums/orderStatus.enum'

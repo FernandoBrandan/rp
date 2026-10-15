@@ -45,4 +45,8 @@ export const envSchema = Joi.object({
 
   LOG_LEVEL: Joi.string().valid('error', 'warn', 'info', 'debug').default('info'),
   SERVICE_NAME: Joi.string().default('ecommerce-api'),
+
+  RECONCILIATION_ENABLED: Joi.boolean().default(true),
+  RECONCILIATION_WINDOW_MINUTES: Joi.number().min(1).default(60),
+  RECONCILIATION_BATCH_SIZE: Joi.number().min(1).max(500).default(50),
 })

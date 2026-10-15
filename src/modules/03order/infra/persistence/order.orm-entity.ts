@@ -1,6 +1,7 @@
-import { Entity, Column, PrimaryColumn } from 'typeorm'
+import { Entity, Column, PrimaryColumn, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm'
 
 @Entity('orders')
+@Index('idx_orders_status_updatedAt', ['status', 'updatedAt'])
 export class OrderEntity {
   @PrimaryColumn({ type: 'varchar' })
   id: string
@@ -28,4 +29,10 @@ export class OrderEntity {
 
   @Column({ nullable: true })
   paymentUrl: string
+
+  @CreateDateColumn()
+  createdAt: Date
+
+  @UpdateDateColumn()
+  updatedAt: Date
 }

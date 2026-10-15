@@ -14,7 +14,7 @@ export * from './bulkhead'
 // Composición Breaker(Retry(Timeout))	✅
 // Listeners defensivos	✅
 // Bulkhead	✅
-// Reconciliación (cron)	⬜
-// Compensating transaction completa (CancelOrder)	⬜
-// TRANSITIONS centralizado	⬜
+// Reconciliación (cron)	✅
+// Compensating transaction completa (CancelOrder)	✅
+// TRANSITIONS centralizado	✅
 // Estado en /health/ready	⬜

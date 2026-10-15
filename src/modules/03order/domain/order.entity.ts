@@ -1,4 +1,3 @@
-// src/modules/03order/domain/order.entity.ts
 import { OrderItem } from './value-objects/orderItem.vo'
 import { Money } from '@common/domain/value-objects/money.vo'
 import { OrderStatus } from './enums/orderStatus.enum'
@@ -25,24 +24,44 @@ interface CreateOrderProps {
 }
 
 export class Order implements IOrder {
+  private static readonly TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
+    [OrderStatus.PENDING]: [
+      OrderStatus.WAITING_PAYMENT,
+      OrderStatus.PAID,
+      OrderStatus.FAILED,
+      OrderStatus.CANCELLED,
+    ],
+    [OrderStatus.WAITING_PAYMENT]: [OrderStatus.PAID, OrderStatus.FAILED, OrderStatus.CANCELLED],
+    [OrderStatus.PAID]: [OrderStatus.COMPLETED, OrderStatus.CANCELLED],
+    [OrderStatus.COMPLETED]: [],
+    [OrderStatus.FAILED]: [],
+    [OrderStatus.CANCELLED]: [],
+  }
+
+  private _status: OrderStatus
+
+  get status(): OrderStatus {
+    return this._status
+  }
+
   constructor(
     public readonly id: string,
     public readonly userId: string,
     public readonly idempotencyKey: string,
     public readonly items: OrderItem[],
     public readonly total: Money,
-    public status: OrderStatus = OrderStatus.PENDING,
-    public reservationId: string,
+    status: OrderStatus = OrderStatus.PENDING,
+    public readonly reservationId: string,
     public paymentStatus: PaymentStatus = PaymentStatus.PENDING,
     public paymentUrl?: string,
-  ) {}
+  ) {
+    this._status = status
+  }
 
   static create(props: CreateOrderProps): Order {
     if (!props.items || props.items.length === 0)
       throw new Error('Order must have at least one item')
-
     const total = props.items.reduce((acc, item) => acc.add(item.subtotal()), new Money(0))
-
     return new Order(
       props.id,
       props.userId,
@@ -52,48 +71,46 @@ export class Order implements IOrder {
       OrderStatus.PENDING,
       props.reservationId,
       PaymentStatus.PENDING,
-      // paymentUrl  undefined por default
     )
   }
 
+  private transitionTo(nextStatus: OrderStatus) {
+    const allowed = Order.TRANSITIONS[this._status]
+    if (!allowed.includes(nextStatus)) {
+      throw new Error(`Cannot transition from ${this._status} to ${nextStatus}`)
+    }
+    this._status = nextStatus
+  }
+
   pay() {
-    if (this.status === OrderStatus.PAID) return
-
-    if (this.status !== OrderStatus.PENDING && this.status !== OrderStatus.WAITING_PAYMENT)
-      throw new Error('Only pending or waiting payment orders can be paid')
-
-    this.status = OrderStatus.PAID
+    if (this._status === OrderStatus.PAID) return
+    this.transitionTo(OrderStatus.PAID)
     this.paymentStatus = PaymentStatus.READY
   }
 
   waiting_payment() {
-    if (this.status !== OrderStatus.PENDING)
-      throw new Error('Only pending orders can move to waiting payment')
-    this.status = OrderStatus.WAITING_PAYMENT
+    this.transitionTo(OrderStatus.WAITING_PAYMENT)
   }
 
   fail() {
-    if (this.status === OrderStatus.FAILED) return
-
-    if (this.status !== OrderStatus.PENDING && this.status !== OrderStatus.WAITING_PAYMENT) {
-      throw new Error('Only pending or waiting payment orders can fail')
-    }
-
-    this.status = OrderStatus.FAILED
+    if (this._status === OrderStatus.FAILED) return
+    this.transitionTo(OrderStatus.FAILED)
   }
+
   completeOrder() {
-    if (this.status !== OrderStatus.PAID) throw new Error('Only paid orders can be completed')
-    this.status = OrderStatus.COMPLETED
+    this.transitionTo(OrderStatus.COMPLETED)
   }
 
   cancelOrder() {
-    if (this.status === OrderStatus.COMPLETED || this.status === OrderStatus.CANCELLED)
-      throw new Error('Cannot cancel a completed or already cancelled order')
-    this.status = OrderStatus.CANCELLED
+    if (this._status === OrderStatus.CANCELLED) return
+    this.transitionTo(OrderStatus.CANCELLED)
+  }
+
+  canBeCancelled(): boolean {
+    return Order.TRANSITIONS[this._status].includes(OrderStatus.CANCELLED)
   }
 
   setPaymentUrl(url: string) {
-    if (this.status !== OrderStatus.PENDING) return
     if (this.paymentUrl) return
     this.paymentUrl = url
   }
