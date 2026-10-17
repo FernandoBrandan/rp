@@ -8,11 +8,12 @@ export class OrderMapper {
       id: order.id,
       userId: order.userId,
       status: order.status,
-      total: order.total.getValue(),
+      total: order.total.toNumber(),
+      currency: order.currency.toString(), // ← NUEVO
       items: order.items.map((item) => ({
         productId: item.productId,
         quantity: item.quantity,
-        price: item.price.getValue(),
+        price: item.price.toNumber(),
       })),
       paymentUrl: order.paymentUrl,
     }

@@ -49,4 +49,10 @@ export const envSchema = Joi.object({
   RECONCILIATION_ENABLED: Joi.boolean().default(true),
   RECONCILIATION_WINDOW_MINUTES: Joi.number().min(1).default(60),
   RECONCILIATION_BATCH_SIZE: Joi.number().min(1).max(500).default(50),
+
+  EVENT_BUS_DRIVER: Joi.string().valid('in-memory', 'rabbitmq').default('in-memory'),
+  RABBITMQ_URL: Joi.string()
+    .uri({ scheme: ['amqp', 'amqps'] })
+    .default('amqp://guest:guest@localhost:5672'),
+  RABBITMQ_EXCHANGE: Joi.string().default('ecommerce'),
 })

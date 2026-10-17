@@ -1,6 +1,7 @@
 export interface RefundInput {
   orderId: string
   amount: number
+  currency: string
   reason: string
 }
 

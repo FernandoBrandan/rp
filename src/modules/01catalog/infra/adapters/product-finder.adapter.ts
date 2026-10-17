@@ -21,7 +21,8 @@ export class ProductFinderAdapter implements ProductFinderPort {
       .map((p) => ({
         id: p.id,
         name: p.name,
-        price: p.price.getValue(),
+        price: p.price.toDecimalString(),
+        currency: p.price.currency.toString(),
         stock: p.stock,
         status: p.status,
       }))

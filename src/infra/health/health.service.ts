@@ -1,8 +1,9 @@
 import { Inject, Injectable, Optional } from '@nestjs/common'
 import { DataSource } from 'typeorm'
 import { Logger } from '@infra/logger/logger.interface'
-import { LOGGER, PAYMENT_CIRCUIT_BREAKER_HEALTH } from '@infra/tokens'
+import { LOGGER, PAYMENT_CIRCUIT_BREAKER_HEALTH, EVENT_PUBLISHER_HEALTH } from '@infra/tokens'
 import { RedisService } from '@infra/redis/redis.service'
+import { EventPublisherHealthPort } from '@infra/event-bus/ports/event-publisher-health.port'
 
 export interface CircuitBreakerHealthPort {
   getState: () => 'CLOSED' | 'OPEN' | 'HALF_OPEN'
@@ -16,6 +17,9 @@ export class HealthService {
 
     @Inject(LOGGER)
     private readonly logger: Logger,
+
+    @Inject(EVENT_PUBLISHER_HEALTH)
+    private readonly eventPublisherHealth: EventPublisherHealthPort,
 
     @Optional()
     @Inject(PAYMENT_CIRCUIT_BREAKER_HEALTH)
@@ -58,6 +62,21 @@ export class HealthService {
     return {
       status: state === 'OPEN' ? 'degraded' : 'up',
       state,
+    }
+  }
+
+  async checkEventBus(): Promise<{ status: 'up'; transport: string }> {
+    try {
+      const healthy = await this.eventPublisherHealth.isHealthy()
+      if (!healthy) throw new Error('Event bus not healthy')
+      return { status: 'up', transport: process.env.EVENT_BUS_DRIVER ?? 'in-memory' }
+    } catch (error) {
+      this.logger.error('Event bus health check failed', {
+        event: 'health_check_failed',
+        component: 'event_bus',
+        error: error instanceof Error ? error.message : String(error),
+      })
+      throw withCause('Event bus is down', error)
     }
   }
 }

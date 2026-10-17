@@ -13,7 +13,7 @@ export class ProductResponseDTO {
   name: string
 
   @ApiProperty({ example: 1500.99 })
-  price: number
+  price: string
 
   @ApiProperty({ example: 10 })
   stock: number

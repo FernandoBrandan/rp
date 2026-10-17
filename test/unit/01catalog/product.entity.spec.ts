@@ -1,4 +1,4 @@
-import { Money } from '@common/domain/value-objects/money.vo'
+import { Money } from '@main/common/domain/value-objects/money.vo'
 import { Product } from '@catalog/domain/product.entity'
 import { Serial } from '@catalog/domain/value-objects/serial.vo'
 import { ProductStatus } from '@catalog/domain/enums/productStatus.enum'

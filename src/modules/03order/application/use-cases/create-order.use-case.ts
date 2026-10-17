@@ -4,7 +4,7 @@ import { Logger } from '@infra/logger/logger.interface'
 
 import { Order } from '@main/modules/03order/domain/order.entity'
 import { OrderItem } from '@order/domain/value-objects/orderItem.vo'
-import { Money } from '@common/domain/value-objects/money.vo'
+import { Money } from '@main/common/domain/value-objects/money.vo'
 
 import { OrderRepository } from '@order/domain/repositories/order.repository'
 
@@ -14,19 +14,28 @@ import { OrderResponseDTO } from '../dto/response/order-response.dto'
 import { OrderIdGenerator } from '@order/infra/services/order-id-generator.service'
 import { StockPort } from '../ports/stock.port'
 import { ProductFinderPort } from '../ports/product-finder.port'
-import { LOGGER, ORDER_REPOSITORY, PRODUCT_FINDER, STOCK_SERVICE } from '@infra/tokens'
+import { EventPublisherPort } from '@infra/event-bus/ports/event-publisher.port'
 
-import { EventEmitter2 } from '@nestjs/event-emitter'
-import { EventNames } from '@common/events/event-names'
+import {
+  EVENT_PUBLISHER,
+  LOGGER,
+  ORDER_REPOSITORY,
+  PRODUCT_FINDER,
+  STOCK_SERVICE,
+} from '@infra/tokens'
+
+import { Topics } from '@common/events/event-names'
 import { OrderCreatedEvent } from '@common/events/'
 import { OrderMapper } from '../mappers/order.mapper'
 import { InsufficientStockException } from '@common/exceptions/insufficient-stock.exception'
 import { OrderStatus } from '../../domain/enums/orderStatus.enum'
+import { Currency } from '@main/common/domain/value-objects/currency.vo'
 
 @Injectable()
 export class CreateOrderUseCase {
   constructor(
-    private readonly eventEmitter: EventEmitter2,
+    @Inject(EVENT_PUBLISHER)
+    private readonly eventPublisher: EventPublisherPort,
 
     @Inject(ORDER_REPOSITORY)
     private readonly orderRepository: OrderRepository,
@@ -73,6 +82,10 @@ export class CreateOrderUseCase {
     const products = await this.productFinderService.findByIds(productIds)
     const productMap = new Map(products.map((p) => [p.id, p]))
 
+    // Currency única para toda la orden.
+    const currencyCode = products[0].currency
+    const currency = Currency.from(currencyCode)
+
     // convertir el input cliente en VOs del dominio validados.
     // reemplazar el precio del cliente por el precio real del catálogo.
     const items = dto.items.map((i) => {
@@ -82,7 +95,12 @@ export class CreateOrderUseCase {
       if (product.status !== 'ACTIVE')
         throw new BadRequestException(`Product ${i.productId} is not active`)
 
-      return new OrderItem(i.productId, i.quantity, new Money(product.price))
+      if (product.currency !== currencyCode) {
+        throw new BadRequestException(
+          `Cannot mix currencies in one order (${currencyCode} vs ${product.currency})`,
+        )
+      }
+      return new OrderItem(i.productId, i.quantity, Money.of(product.price, currency))
     })
 
     let reservationId: string
@@ -103,6 +121,7 @@ export class CreateOrderUseCase {
       userId: userId,
       idempotencyKey: dto.idempotencyKey,
       items,
+      currency,
       reservationId,
     })
 
@@ -129,7 +148,33 @@ export class CreateOrderUseCase {
       throw new HttpException('Error creating order', 500)
     }
 
-    this.eventEmitter.emit(EventNames.ORDER_CREATED, new OrderCreatedEvent(order.id))
+    const event: OrderCreatedEvent = {
+      orderId: order.id,
+      userId: order.userId,
+      total: order.total.toNumber(),
+      currency: order.currency.toString(),
+      items: order.items.map((i) => ({
+        productId: i.productId,
+        quantity: i.quantity,
+        price: i.price.toNumber(),
+      })),
+      occurredAt: new Date().toISOString(),
+    }
+
+    try {
+      await this.eventPublisher.publish(Topics.ORDER_CREATED, event)
+    } catch (err) {
+      // La orden YA está creada y el stock reservado.
+      // No la revertimos acá: la reconciliación (cron) va a detectar
+      // órdenes en PENDING sin payment link y las va a reparar.
+      this.logger.error('Failed to publish order.created', {
+        event: 'order_created_publish_failed',
+        orderId: order.id,
+        error: err instanceof Error ? err.message : String(err),
+      })
+      // No re-throw: el request fue exitoso, solo falló la notificación.
+      // Si esto se vuelve frecuente → implementar Outbox Pattern (Fase 3).
+    }
 
     this.logger.info('Order Created', {
       orderId: order.id,

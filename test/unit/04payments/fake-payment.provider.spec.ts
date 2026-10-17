@@ -66,7 +66,7 @@ describe('FakePaymentProvider', () => {
     jest.advanceTimersByTime(1000)
 
     expect(emitter.emit).toHaveBeenCalledWith(
-      EventNames.ORDER_PAID,
+      EventNames.Ecommerce.ORDER_PAID,
       expect.objectContaining({ orderId: 'ORDER-1' }),
     )
   })
@@ -83,7 +83,7 @@ describe('FakePaymentProvider', () => {
     jest.advanceTimersByTime(1000)
 
     expect(emitter.emit).toHaveBeenCalledWith(
-      EventNames.ORDER_PAYMENT_FAILED,
+      EventNames.Ecommerce.ORDER_PAYMENT_FAILED,
       expect.objectContaining({ orderId: 'ORDER-1' }),
     )
   })

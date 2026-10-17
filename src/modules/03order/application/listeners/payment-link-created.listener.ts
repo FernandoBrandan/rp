@@ -1,11 +1,11 @@
 // src/modules/03order/application/listeners/payment-link-created.listener.ts
 import { Injectable, Inject } from '@nestjs/common'
-import { OnEvent } from '@nestjs/event-emitter'
+// import { OnEvent } from '@nestjs/event-emitter'
 
 import { Logger } from '@infra/logger/logger.interface'
 import { LOGGER, ORDER_REPOSITORY } from '@infra/tokens'
 
-import { EventNames } from '@common/events/event-names'
+import { Topics } from '@common/events/event-names'
 import { PaymentLinkCreatedEvent } from '@common/events/'
 
 import { OrderRepository } from '@order/domain/repositories/order.repository'
@@ -13,23 +13,42 @@ import { OrderRepository } from '@order/domain/repositories/order.repository'
 @Injectable()
 export class PaymentLinkCreatedListener {
   constructor(
-    @Inject(ORDER_REPOSITORY) private readonly orderRepository: OrderRepository,
-    @Inject(LOGGER) private readonly logger: Logger,
+    @Inject(ORDER_REPOSITORY)
+    private readonly orderRepository: OrderRepository,
+
+    @Inject(LOGGER)
+    private readonly logger: Logger,
   ) {}
 
-  @OnEvent(EventNames.PAYMENT_LINK_CREATED)
+  // @OnEvent(Topics.PAYMENT_LINK_CREATED)
   async handle(event: PaymentLinkCreatedEvent) {
     this.logger.info('Attaching payment URL to order', {
       orderId: event.orderId,
     })
 
     const order = await this.orderRepository.getOrderDetail(event.orderId)
-    if (!order) return
-    if (order.paymentUrl) return
+    if (!order) {
+      this.logger.warn('PaymentLinkCreated received for unknown order', {
+        event: 'payment_link_orphan',
+        orderId: event.orderId,
+      })
+      return
+    }
+
+    // Idempotencia: si ya tiene URL, no pisar
+    if (order.paymentUrl) {
+      this.logger.debug('Payment URL already set, skipping', { orderId: order.id })
+      return
+    }
 
     order.setPaymentUrl(event.paymentUrl)
     order.waiting_payment()
     order.markPaymentReady()
     await this.orderRepository.update(order)
+
+    this.logger.info('Payment link attached to order', {
+      orderId: order.id,
+      paymentUrl: event.paymentUrl,
+    })
   }
 }

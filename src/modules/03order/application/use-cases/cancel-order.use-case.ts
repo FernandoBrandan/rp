@@ -77,14 +77,15 @@ export class CancelOrderUseCase {
       try {
         await this.refund.refund({
           orderId,
-          amount: order.total.getValue(),
+          amount: order.total.toNumber(),
+          currency: order.currency.toString(), // ← NUEVO (si tu RefundInput lo soporta)
           reason: 'user_cancelled_paid_order',
         })
       } catch (err) {
         this.logger.error('Cancel: refund failed', {
           event: 'cancel_refund_failed',
           orderId,
-          amount: order.total.getValue(),
+          amount: order.total.toNumber(),
           error: err instanceof Error ? err.message : String(err),
         })
         // Nota: sin payments table (Fase 3), el cron no puede reconciliar esto.

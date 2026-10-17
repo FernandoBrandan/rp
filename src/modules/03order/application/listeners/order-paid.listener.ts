@@ -1,6 +1,6 @@
 import { Injectable, Inject } from '@nestjs/common'
-import { OnEvent } from '@nestjs/event-emitter'
-import { EventNames } from '@common/events/event-names'
+// import { OnEvent } from '@nestjs/event-emitter'
+import { Topics } from '@common/events/event-names'
 
 import { Logger } from '@infra/logger/logger.interface'
 import { LOGGER, ORDER_REPOSITORY, STOCK_SERVICE } from '@infra/tokens'
@@ -16,6 +16,10 @@ const TERMINAL_STATUSES = new Set<OrderStatus>([
   OrderStatus.COMPLETED,
 ])
 
+// **********************************************
+// Queda como ejemplo por ahora
+// **********************************************
+
 @Injectable()
 export class OrderPaidListener {
   constructor(
@@ -29,7 +33,7 @@ export class OrderPaidListener {
     private readonly logger: Logger,
   ) {}
 
-  @OnEvent(EventNames.ORDER_PAID)
+  // @OnEvent(Topics.PAYMENT_APPROVED)
   async handle(event: OrderPaidEvent) {
     const order = await this.orderRepository.getOrderDetail(event.orderId)
     if (!order) {

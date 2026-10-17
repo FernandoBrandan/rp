@@ -1,5 +1,5 @@
 // src/modules/03order/domain/value-objects/orderItem.vo.ts
-import { Money } from '@common/domain/value-objects/money.vo'
+import { Money } from '@main/common/domain/value-objects/money.vo'
 
 export class OrderItem {
   constructor(
@@ -9,6 +9,9 @@ export class OrderItem {
   ) {
     if (quantity <= 0) {
       throw new Error('Quantity must be greater than 0')
+    }
+    if (!Number.isInteger(quantity)) {
+      throw new Error('Quantity must be an integer')
     }
   }
 

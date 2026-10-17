@@ -13,8 +13,8 @@ export class ProductEntity {
   @Column()
   name: string
 
-  @Column('float')
-  price: number
+  @Column({ type: 'decimal', precision: 12, scale: 2 })
+  price: string
 
   @Column({ default: 0 })
   stock: number

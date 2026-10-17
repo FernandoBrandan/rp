@@ -3,7 +3,7 @@ import { TypeOrmOrderRepository } from '@order/infra/repositories/typeorm-order.
 import { OrderEntity } from '@order/infra/persistence/order.orm-entity'
 import { Order } from '@main/modules/03order/domain/order.entity'
 import { OrderItem } from '@order/domain/value-objects/orderItem.vo'
-import { Money } from '@common/domain/value-objects/money.vo'
+import { Money } from '@main/common/domain/value-objects/money.vo'
 import { OrderStatus } from '@order/domain/enums/orderStatus.enum'
 
 describe('TypeOrmOrderRepository (integration)', () => {

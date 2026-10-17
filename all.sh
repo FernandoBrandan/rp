@@ -37,7 +37,7 @@ EXCLUDE_PATTERNS=(
   "*.pdf" "*.zip" "*.tar" "*.gz" "*.rar" "*.7z"
   "*.exe" "*.dll" "*.so" "*.dylib" "*.bin" "*.class" "*.o"
   "*.mp3" "*.mp4" "*.mov" "*.avi" "*.wav"
-  "*.lock"
+  "*.lock" ".env"
   # Archivos generados por este mismo script
   "_structure.txt" "_fullCode.txt"
 )

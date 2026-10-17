@@ -8,7 +8,7 @@ export class ProductMapper {
       id: product.id,
       serial: product.serial.getValue(),
       name: product.name,
-      price: product.price.getValue(),
+      price: product.price.toDecimalString(),
       stock: product.stock,
       status: product.status,
     }

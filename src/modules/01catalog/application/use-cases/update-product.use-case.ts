@@ -3,12 +3,13 @@ import { BadRequestException, Inject, Injectable, NotFoundException } from '@nes
 
 import { Logger } from '@infra/logger/logger.interface'
 
-import { Money } from '@common/domain/value-objects/money.vo'
+import { Money } from '@main/common/domain/value-objects/money.vo'
 import { ProductStatus } from '@catalog/domain/enums/productStatus.enum'
 import { ProductRepository } from '@catalog/domain/repositories/product.repository'
 import { LOGGER, PRODUCT_REPOSITORY } from '@infra/tokens'
 import { UpdateProductDTO } from '../dto/request/update-product.request.dto'
 import { ProductMapper } from '../mappers/product.mapper'
+import { Currency } from '@main/common/domain/value-objects/currency.vo'
 
 @Injectable()
 export class UpdateProductUseCase {
@@ -36,7 +37,7 @@ export class UpdateProductUseCase {
         hasChanges = true
       }
       if (dto.price !== undefined) {
-        product.updatePrice(new Money(dto.price))
+        product.updatePrice(Money.of(dto.price, Currency.USD))
         hasChanges = true
       }
       if (dto.stock !== undefined) {

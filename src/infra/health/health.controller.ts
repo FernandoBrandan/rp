@@ -41,6 +41,7 @@ export class HealthController {
       this.healthService.checkDatabase(),
       this.healthService.checkRedis(),
       this.healthService.checkPaymentCircuitBreaker(),
+      this.healthService.checkEventBus(),
     ])
 
     checks.database =
@@ -57,6 +58,11 @@ export class HealthController {
       results[2].status === 'fulfilled'
         ? results[2].value
         : { status: 'down', error: (results[2].reason as Error).message }
+
+    checks.eventBus =
+      results[3].status === 'fulfilled'
+        ? results[3].value
+        : { status: 'down', error: (results[3].reason as Error).message }
 
     const dbUp = checks.database.status === 'up'
     const redisUp = checks.redis.status === 'up'

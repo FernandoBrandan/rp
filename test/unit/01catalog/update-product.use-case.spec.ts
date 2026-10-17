@@ -3,7 +3,7 @@ import { NotFoundException } from '@nestjs/common'
 import { UpdateProductUseCase } from '@catalog/application/use-cases/update-product.use-case'
 import { Product } from '@catalog/domain/product.entity'
 import { Serial } from '@catalog/domain/value-objects/serial.vo'
-import { Money } from '@common/domain/value-objects/money.vo'
+import { Money } from '@main/common/domain/value-objects/money.vo'
 import { ProductStatus } from '@catalog/domain/enums/productStatus.enum'
 
 function makeProduct(): Product {

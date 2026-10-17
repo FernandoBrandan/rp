@@ -3,7 +3,8 @@
 export interface ProductSnapshot {
   id: string
   name: string
-  price: number
+  price: string
+  currency: string
   stock: number
   status: string
 }

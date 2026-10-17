@@ -4,7 +4,7 @@ import { InsufficientStockException } from '@common/exceptions/insufficient-stoc
 import { CreateOrderUseCase } from '@order/application/use-cases/create-order.use-case'
 import { Order } from '@main/modules/03order/domain/order.entity'
 import { OrderItem } from '@order/domain/value-objects/orderItem.vo'
-import { Money } from '@common/domain/value-objects/money.vo'
+import { Money } from '@main/common/domain/value-objects/money.vo'
 import { OrderStatus } from '@order/domain/enums/orderStatus.enum'
 import { EventNames } from '@common/events/event-names'
 
@@ -123,7 +123,7 @@ describe('CreateOrderUseCase', () => {
     expect(deps.stockService.reserveStock).toHaveBeenCalledTimes(1)
     expect(deps.orderRepository.createOrder).toHaveBeenCalledTimes(1)
     expect(deps.eventEmitter.emit).toHaveBeenCalledWith(
-      EventNames.ORDER_CREATED,
+      EventNames.Ecommerce.ORDER_CREATED,
       expect.objectContaining({ orderId: 'ORDER-1' }),
     )
   })

@@ -27,6 +27,9 @@ export class OrderResponseDTO {
   @ApiProperty({ example: 3001.98 })
   total: number
 
+  @ApiProperty({ example: 'ARS' })
+  currency: string
+
   @ApiProperty({ type: [OrderItemResponseDTO] })
   items: OrderItemResponseDTO[]
 

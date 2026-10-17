@@ -6,7 +6,7 @@ import { AppModule } from '@main/app.module'
 
 import { Product } from '@catalog/domain/product.entity'
 import { Serial } from '@catalog/domain/value-objects/serial.vo'
-import { Money } from '@common/domain/value-objects/money.vo'
+import { Money } from '@main/common/domain/value-objects/money.vo'
 import { ProductStatus } from '@catalog/domain/enums/productStatus.enum'
 import { ProductRepository } from '@catalog/domain/repositories/product.repository'
 
@@ -17,6 +17,7 @@ import { UserRepository } from '@user/domain/repositories/user.repository'
 import { UserRole } from '@common/user-role.enum'
 import { PRODUCT_REPOSITORY, USER_REPOSITORY, HASH_SERVICE } from '@infra/tokens'
 import { HashService } from '@infra/auth-infra/ports/hash.service'
+import { Currency } from '@main/common/domain/value-objects/currency.vo'
 
 interface SeedProduct {
   serial: string
@@ -50,7 +51,7 @@ async function seedProducts(repo: ProductRepository) {
       randomUUID(),
       new Serial(p.serial),
       p.name,
-      new Money(p.price),
+      Money.of(p.price, Currency.USD),
       p.stock,
       ProductStatus.ACTIVE,
     )

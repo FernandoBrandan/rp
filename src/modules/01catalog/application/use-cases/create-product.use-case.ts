@@ -5,7 +5,7 @@ import { Logger } from '@infra/logger/logger.interface'
 
 import { Product } from '@catalog/domain/product.entity'
 import { Serial } from '@catalog/domain/value-objects/serial.vo'
-import { Money } from '@common/domain/value-objects/money.vo'
+import { Money } from '@main/common/domain/value-objects/money.vo'
 import { ProductStatus } from '@catalog/domain/enums/productStatus.enum'
 
 import { ProductRepository } from '@catalog/domain/repositories/product.repository'
@@ -15,6 +15,7 @@ import { CreateProductDTO } from '../dto/request/create-product.request.dto'
 import { LOGGER, PRODUCT_REPOSITORY } from '@infra/tokens'
 
 import { ProductMapper } from '../mappers/product.mapper'
+import { Currency } from '@main/common/domain/value-objects/currency.vo'
 
 @Injectable()
 export class CreateProductUseCase {
@@ -40,7 +41,7 @@ export class CreateProductUseCase {
       randomUUID(),
       serial,
       dto.name,
-      new Money(dto.price),
+      Money.of(dto.price, Currency.USD),
       dto.stock,
       dto.status ?? ProductStatus.ACTIVE,
     )

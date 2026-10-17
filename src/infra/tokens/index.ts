@@ -27,10 +27,17 @@ export const CART_REPOSITORY = Symbol('CART_REPOSITORY')
 
 export const ORDER_REPOSITORY = Symbol('ORDER_REPOSITORY')
 export const ORDER_FINDER = Symbol('ORDER_FINDER')
-export const ORDER_PAYMENT_STATUS = Symbol('ORDER_PAYMENT_STATUS')
 
 export const REFUND_SERVICE = Symbol('REFUND_SERVICE')
+
+// ---------------------------------------------------------------------------------
+
+export const EVENT_CONSUMER = Symbol('EVENT_CONSUMER')
+export const EVENT_PUBLISHER = Symbol('EVENT_PUBLISHER')
+export const EVENT_PUBLISHER_HEALTH = Symbol('EVENT_PUBLISHER_HEALTH')
 // ---------------------------------------------------------------------------------
 
 export const PAYMENT_PROVIDER = Symbol('PAYMENT_PROVIDER')
 export const PAYMENT_CIRCUIT_BREAKER_HEALTH = Symbol('PAYMENT_CIRCUIT_BREAKER_HEALTH')
+
+// ---------------------------------------------------------------------------------

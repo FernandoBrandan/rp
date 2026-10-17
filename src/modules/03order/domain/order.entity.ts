@@ -1,7 +1,8 @@
 import { OrderItem } from './value-objects/orderItem.vo'
-import { Money } from '@common/domain/value-objects/money.vo'
+import { Money } from '@main/common/domain/value-objects/money.vo'
 import { OrderStatus } from './enums/orderStatus.enum'
 import { PaymentStatus } from './enums/paymentStatus.enum'
+import { Currency } from '@main/common/domain/value-objects/currency.vo'
 
 interface IOrder {
   id: string
@@ -20,6 +21,7 @@ interface CreateOrderProps {
   userId: string
   idempotencyKey: string
   items: OrderItem[]
+  currency: Currency
   reservationId: string
 }
 
@@ -44,6 +46,10 @@ export class Order implements IOrder {
     return this._status
   }
 
+  get currency(): Currency {
+    return this.total.currency
+  }
+
   constructor(
     public readonly id: string,
     public readonly userId: string,
@@ -56,12 +62,21 @@ export class Order implements IOrder {
     public paymentUrl?: string,
   ) {
     this._status = status
+
+    for (const item of this.items) {
+      if (!item.price.currency.equals(this.total.currency)) {
+        throw new Error('Order items currency mismatch')
+      }
+    }
   }
 
   static create(props: CreateOrderProps): Order {
     if (!props.items || props.items.length === 0)
       throw new Error('Order must have at least one item')
-    const total = props.items.reduce((acc, item) => acc.add(item.subtotal()), new Money(0))
+
+    const currency = props.currency
+    const total = props.items.reduce((acc, item) => acc.add(item.subtotal()), Money.zero(currency))
+
     return new Order(
       props.id,
       props.userId,

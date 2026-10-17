@@ -42,7 +42,7 @@ export class ProductCheckerAdapter implements ProductCheckerPort {
     }
     return {
       name: product.name,
-      price: product.price.getValue(),
+      price: product.price.toDecimalString(),
       status: product.status,
       stock: product.stock,
     }

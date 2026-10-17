@@ -1,4 +1,4 @@
-import { Money } from '@common/domain/value-objects/money.vo'
+import { Money } from '@main/common/domain/value-objects/money.vo'
 import { OrderItem } from '@order/domain/value-objects/orderItem.vo'
 
 describe('OrderItem', () => {

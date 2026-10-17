@@ -18,6 +18,9 @@ export class OrderEntity {
   @Column('float')
   total: number
 
+  @Column({ type: 'varchar', length: 3 })
+  currency: string
+
   @Column()
   status: string
 
