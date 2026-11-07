@@ -1,17 +1,14 @@
 // src/modules/01catalog/infra/adapters/stock-reservation.adapter.ts
 
-import { Inject, Injectable } from '@nestjs/common'
-import { DataSource } from 'typeorm'
-import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
-import { Logger } from '@infra/logger/logger.interface'
-import { LOGGER } from '@infra/tokens'
-import { StockPort } from '@order/application/ports/stock.port'
-import {
-  ReservationStatus,
-  StockReservationEntity,
-} from '../persistence/stock-reservation.orm-entity'
-import { InsufficientStockException } from '@common/exceptions/insufficient-stock.exception'
+import { Inject, Injectable } from '@nestjs/common';
+import { DataSource } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Logger } from '@infra/logger/logger.interface';
+import { LOGGER } from '@infra/tokens';
+import { StockPort } from '@order/application/ports/stock.port';
+import { ReservationStatus, StockReservationEntity } from '../persistence/stock-reservation.orm-entity';
+import { InsufficientStockException } from '@main/modules/01catalog/domain/errors/insufficient-stock.exception';
 
 @Injectable()
 export class StockReservationAdapter implements StockPort {
@@ -22,10 +19,7 @@ export class StockReservationAdapter implements StockPort {
     @Inject(LOGGER) private readonly logger: Logger,
   ) {}
 
-  async reserveStock(
-    items: { productId: string; quantity: number }[],
-    orderId: string,
-  ): Promise<string> {
+  async reserveStock(items: { productId: string; quantity: number }[], orderId: string): Promise<string> {
     return this.dataSource.transaction(async (manager) => {
       for (const item of items) {
         const result = await manager
@@ -40,9 +34,9 @@ export class StockReservationAdapter implements StockPort {
             id: item.productId,
             qty: item.quantity,
           })
-          .execute()
+          .execute();
         if (result.affected === 0) {
-          throw new InsufficientStockException(item.productId)
+          throw new InsufficientStockException(item.productId);
         }
       }
 
@@ -50,10 +44,10 @@ export class StockReservationAdapter implements StockPort {
         orderId,
         items,
         status: 'RESERVED',
-      })
-      const saved = await manager.save(reservation)
-      return saved.id
-    })
+      });
+      const saved = await manager.save(reservation);
+      return saved.id;
+    });
   }
 
   async confirmReservation(reservationId: string): Promise<void> {
@@ -61,24 +55,23 @@ export class StockReservationAdapter implements StockPort {
       const reservation = await manager.findOne(StockReservationEntity, {
         where: { id: reservationId },
         lock: { mode: 'pessimistic_write' },
-      })
+      });
 
-      if (!reservation) throw new Error(`Reservation ${reservationId} not found`)
+      if (!reservation) throw new Error(`Reservation ${reservationId} not found`);
 
       if (reservation.status === 'CONFIRMED') {
         this.logger.info('Reservation already confirmed, skipping', {
           reservationId,
-        })
-        return
+        });
+        return;
       }
 
-      if (reservation.status === 'RELEASED')
-        throw new Error(`Cannot confirm released reservation ${reservationId}`)
+      if (reservation.status === 'RELEASED') throw new Error(`Cannot confirm released reservation ${reservationId}`);
 
-      reservation.status = 'CONFIRMED'
-      await manager.save(reservation)
-      this.logger.info('Stock confirmed', { reservationId })
-    })
+      reservation.status = 'CONFIRMED';
+      await manager.save(reservation);
+      this.logger.info('Stock confirmed', { reservationId });
+    });
   }
 
   async releaseReservation(reservationId: string): Promise<void> {
@@ -86,18 +79,17 @@ export class StockReservationAdapter implements StockPort {
       const reservation = await manager.findOne(StockReservationEntity, {
         where: { id: reservationId },
         lock: { mode: 'pessimistic_write' },
-      })
+      });
 
-      if (!reservation) throw new Error(`Reservation ${reservationId} not found`)
+      if (!reservation) throw new Error(`Reservation ${reservationId} not found`);
       if (reservation.status === 'RELEASED') {
         this.logger.info('Reservation already released, skipping', {
           reservationId,
-        })
-        return
+        });
+        return;
       }
 
-      if (reservation.status === 'CONFIRMED')
-        throw new Error(`Cannot release confirmed reservation ${reservationId}`)
+      if (reservation.status === 'CONFIRMED') throw new Error(`Cannot release confirmed reservation ${reservationId}`);
 
       for (const item of reservation.items) {
         await manager
@@ -105,19 +97,19 @@ export class StockReservationAdapter implements StockPort {
           .update('products')
           .set({ stock: () => `stock + ${item.quantity}` })
           .where('id = :id', { id: item.productId })
-          .execute()
+          .execute();
       }
-      reservation.status = 'RELEASED'
-      await manager.save(reservation)
-      this.logger.info('Stock released', { reservationId })
-    })
+      reservation.status = 'RELEASED';
+      await manager.save(reservation);
+      this.logger.info('Stock released', { reservationId });
+    });
   }
 
   async getReservationStatus(reservationId: string): Promise<ReservationStatus | null> {
     const reservation = await this.stockReservationRepo.findOne({
       where: { id: reservationId },
-    })
-    return reservation ? (reservation.status as ReservationStatus) : null
+    });
+    return reservation ? (reservation.status as ReservationStatus) : null;
   }
 
   async restockReservation(reservationId: string): Promise<void> {
@@ -125,19 +117,19 @@ export class StockReservationAdapter implements StockPort {
       const reservation = await manager.findOne(StockReservationEntity, {
         where: { id: reservationId },
         lock: { mode: 'pessimistic_write' },
-      })
+      });
 
       if (!reservation) {
-        throw new Error(`Reservation ${reservationId} not found`)
+        throw new Error(`Reservation ${reservationId} not found`);
       }
 
       if (reservation.status === 'RELEASED') {
-        this.logger.info('Reservation already released, skipping restock', { reservationId })
-        return
+        this.logger.info('Reservation already released, skipping restock', { reservationId });
+        return;
       }
 
       // RESERVED o CONFIRMED → devolver stock y marcar RELEASED
-      const previousStatus = reservation.status
+      const previousStatus = reservation.status;
 
       for (const item of reservation.items) {
         await manager
@@ -145,17 +137,17 @@ export class StockReservationAdapter implements StockPort {
           .update('products')
           .set({ stock: () => `stock + ${item.quantity}` })
           .where('id = :id', { id: item.productId })
-          .execute()
+          .execute();
       }
 
-      reservation.status = 'RELEASED'
-      await manager.save(reservation)
+      reservation.status = 'RELEASED';
+      await manager.save(reservation);
 
       this.logger.info('Stock restocked', {
         event: 'stock_restocked',
         reservationId,
         previousStatus,
-      })
-    })
+      });
+    });
   }
 }

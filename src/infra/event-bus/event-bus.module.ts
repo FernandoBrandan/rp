@@ -1,17 +1,17 @@
 // src/infra/event-bus/event-bus.module.ts
-import { Global, Module } from '@nestjs/common'
-import { ConfigModule, ConfigService } from '@nestjs/config'
+import { Global, Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
-import { LoggerModule } from '@infra/logger/logger.module'
-import { EVENT_CONSUMER, EVENT_PUBLISHER, EVENT_PUBLISHER_HEALTH } from '@infra/tokens'
+import { LoggerModule } from '@infra/logger/logger.module';
+import { EVENT_CONSUMER, EVENT_PUBLISHER, EVENT_PUBLISHER_HEALTH } from '@infra/tokens';
 
-import { EventPublisherPort } from './ports/event-publisher.port'
-import { EventPublisherHealthPort } from './ports/event-publisher-health.port'
+import { EventPublisherPort } from './ports/event-publisher.port';
+import { EventPublisherHealthPort } from './ports/event-publisher-health.port';
 
-import { InMemoryEventPublisher } from './adapters/test-example/in-memory-event-publisher'
-import { InMemoryEventConsumer } from './adapters/test-example/in-memory-event-consumer'
-import { RabbitMQEventPublisher } from './adapters/rabbitmq-event-publisher'
-import { RabbitMQEventConsumer } from './adapters/rabbitmq-event-consumer'
+import { InMemoryEventPublisher } from './adapters/test-example/in-memory-event-publisher';
+import { InMemoryEventConsumer } from './adapters/test-example/in-memory-event-consumer';
+import { RabbitMQEventPublisher } from './adapters/rabbitmq-event-publisher';
+import { RabbitMQEventConsumer } from './adapters/rabbitmq-event-consumer';
 
 @Global()
 @Module({
@@ -35,15 +35,15 @@ import { RabbitMQEventConsumer } from './adapters/rabbitmq-event-consumer'
         inMemory: InMemoryEventPublisher,
         rabbit: RabbitMQEventPublisher,
       ): EventPublisherPort => {
-        const driver = config.get<string>('EVENT_BUS_DRIVER', 'in-memory')
-        return driver === 'rabbitmq' ? rabbit : inMemory
+        const driver = config.get<string>('EVENT_BUS_DRIVER', 'in-memory');
+        return driver === 'rabbitmq' ? rabbit : inMemory;
       },
     },
     {
       provide: EVENT_PUBLISHER_HEALTH,
       inject: [ConfigService, InMemoryEventPublisher, RabbitMQEventPublisher],
       useFactory: (config, inMemory, rabbit): EventPublisherHealthPort => {
-        return config.get('EVENT_BUS_DRIVER', 'in-memory') === 'rabbitmq' ? rabbit : inMemory
+        return config.get('EVENT_BUS_DRIVER', 'in-memory') === 'rabbitmq' ? rabbit : inMemory;
       },
     },
   ],

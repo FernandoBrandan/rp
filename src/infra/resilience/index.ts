@@ -1,8 +1,8 @@
 // src/infra/resilience/index.ts
-export * from './timeout'
-export * from './retry'
-export * from './circuit-breaker'
-export * from './bulkhead'
+export * from './timeout';
+export * from './retry';
+export * from './circuit-breaker';
+export * from './bulkhead';
 
 //pendientes
 

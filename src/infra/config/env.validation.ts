@@ -1,5 +1,6 @@
-import * as Joi from 'joi'
+import * as Joi from 'joi';
 
+// Schema default + personalizado por proyecto
 export const envSchema = Joi.object({
   NODE_ENV: Joi.string().valid('dev', 'prod', 'test').default('dev'),
   PORT: Joi.number().default(3000),
@@ -30,9 +31,7 @@ export const envSchema = Joi.object({
 
   MERCADOPAGO_ACCESS_TOKEN: Joi.string().allow('').optional(),
 
-  FAKE_PAYMENT_OUTCOME: Joi.string()
-    .valid('approved', 'failed', 'pending', 'flaky')
-    .default('approved'),
+  FAKE_PAYMENT_OUTCOME: Joi.string().valid('approved', 'failed', 'pending', 'flaky').default('approved'),
   FAKE_PAYMENT_DELAY_MS: Joi.number().default(3000),
   FAKE_PAYMENT_GENERATION_DELAY_MS: Joi.number().min(0).default(0),
   FAKE_PAYMENT_TIMEOUT_RATE: Joi.number().min(0).max(1).default(0),
@@ -55,4 +54,4 @@ export const envSchema = Joi.object({
     .uri({ scheme: ['amqp', 'amqps'] })
     .default('amqp://guest:guest@localhost:5672'),
   RABBITMQ_EXCHANGE: Joi.string().default('ecommerce'),
-})
+});

@@ -1,14 +1,11 @@
 // test/unit/04payments/bulkheaded-payment.provider.spec.ts
 
-import { BulkheadedPaymentProvider } from '@payment/infra/providerResilience/bulkheaded-payment.provider'
-import { BulkheadFullError } from '@infra/resilience'
-import {
-  PaymentOrderSnapshot,
-  PaymentProviderPort,
-} from '@payment/application/ports/payment-provider.port'
+import { BulkheadedPaymentProvider } from '@payment/infra/providerResilience/bulkheaded-payment.provider';
+import { BulkheadFullError } from '@infra/resilience';
+import { PaymentOrderSnapshot, PaymentProviderPort } from '@payment/application/ports/payment-provider.port';
 
 function makeLogger() {
-  return { info: jest.fn(), warn: jest.fn(), error: jest.fn(), debug: jest.fn() }
+  return { info: jest.fn(), warn: jest.fn(), error: jest.fn(), debug: jest.fn() };
 }
 
 const order: PaymentOrderSnapshot = {
@@ -16,54 +13,42 @@ const order: PaymentOrderSnapshot = {
   total: 200,
   items: [{ productId: 'p', quantity: 1 }],
   status: 'PENDING',
-}
+};
 
 function makeInner(impl: PaymentProviderPort['generatePaymentLink']): PaymentProviderPort {
-  return { generatePaymentLink: impl }
+  return { generatePaymentLink: impl };
 }
 
-const delay = (ms: number) => new Promise((r) => setTimeout(r, ms))
+const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 describe('BulkheadedPaymentProvider', () => {
   it('delega al inner cuando hay capacidad', async () => {
-    const inner = makeInner(jest.fn().mockResolvedValue({ url: 'ok' }))
-    const provider = new BulkheadedPaymentProvider(
-      inner,
-      { maxConcurrent: 5, maxQueue: 10 },
-      makeLogger() as any,
-    )
+    const inner = makeInner(jest.fn().mockResolvedValue({ url: 'ok' }));
+    const provider = new BulkheadedPaymentProvider(inner, { maxConcurrent: 5, maxQueue: 10 }, makeLogger() as any);
 
-    const result = await provider.generatePaymentLink(order)
+    const result = await provider.generatePaymentLink(order);
 
-    expect(result.url).toBe('ok')
-    expect(inner.generatePaymentLink).toHaveBeenCalledWith(order)
-  })
+    expect(result.url).toBe('ok');
+    expect(inner.generatePaymentLink).toHaveBeenCalledWith(order);
+  });
 
   it('rechaza cuando el bulkhead está saturado (queue full)', async () => {
-    const inner = makeInner(() => delay(1000).then(() => ({ url: 'late' })))
-    const provider = new BulkheadedPaymentProvider(
-      inner,
-      { maxConcurrent: 1, maxQueue: 0 },
-      makeLogger() as any,
-    )
+    const inner = makeInner(() => delay(1000).then(() => ({ url: 'late' })));
+    const provider = new BulkheadedPaymentProvider(inner, { maxConcurrent: 1, maxQueue: 0 }, makeLogger() as any);
 
-    const blocker = provider.generatePaymentLink(order)
+    const blocker = provider.generatePaymentLink(order);
 
-    await expect(provider.generatePaymentLink(order)).rejects.toBeInstanceOf(BulkheadFullError)
-    await blocker
-  })
+    await expect(provider.generatePaymentLink(order)).rejects.toBeInstanceOf(BulkheadFullError);
+    await blocker;
+  });
 
   it('loguea event=payment_blocked_by_bulkhead cuando rechaza', async () => {
-    const logger = makeLogger()
-    const inner = makeInner(() => delay(1000).then(() => ({ url: 'late' })))
-    const provider = new BulkheadedPaymentProvider(
-      inner,
-      { maxConcurrent: 1, maxQueue: 0 },
-      logger as any,
-    )
+    const logger = makeLogger();
+    const inner = makeInner(() => delay(1000).then(() => ({ url: 'late' })));
+    const provider = new BulkheadedPaymentProvider(inner, { maxConcurrent: 1, maxQueue: 0 }, logger as any);
 
-    const blocker = provider.generatePaymentLink(order)
-    await expect(provider.generatePaymentLink(order)).rejects.toBeInstanceOf(BulkheadFullError)
+    const blocker = provider.generatePaymentLink(order);
+    await expect(provider.generatePaymentLink(order)).rejects.toBeInstanceOf(BulkheadFullError);
 
     expect(logger.warn).toHaveBeenCalledWith(
       'Payment blocked by bulkhead saturation',
@@ -72,23 +57,19 @@ describe('BulkheadedPaymentProvider', () => {
         orderId: 'ORDER-1',
         reason: 'QUEUE_FULL',
       }),
-    )
-    await blocker
-  })
+    );
+    await blocker;
+  });
 
   it('expone getMetrics()', async () => {
-    const inner = makeInner(jest.fn().mockResolvedValue({ url: 'ok' }))
-    const provider = new BulkheadedPaymentProvider(
-      inner,
-      { maxConcurrent: 5, maxQueue: 10 },
-      makeLogger() as any,
-    )
+    const inner = makeInner(jest.fn().mockResolvedValue({ url: 'ok' }));
+    const provider = new BulkheadedPaymentProvider(inner, { maxConcurrent: 5, maxQueue: 10 }, makeLogger() as any);
 
-    const metrics = provider.getMetrics()
+    const metrics = provider.getMetrics();
 
-    expect(metrics.capacity).toBe(5)
-    expect(metrics.queueCapacity).toBe(10)
-    expect(metrics.active).toBe(0)
-    expect(metrics.queued).toBe(0)
-  })
-})
+    expect(metrics.capacity).toBe(5);
+    expect(metrics.queueCapacity).toBe(10);
+    expect(metrics.active).toBe(0);
+    expect(metrics.queued).toBe(0);
+  });
+});

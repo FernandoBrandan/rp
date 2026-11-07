@@ -1,12 +1,12 @@
 export interface RefundInput {
-  orderId: string
-  amount: number
-  currency: string
-  reason: string
+  orderId: string;
+  amount: number;
+  currency: string;
+  reason: string;
 }
 
 export interface RefundResult {
-  refundId: string
+  refundId: string;
 }
 
 export interface RefundPort {
@@ -15,5 +15,5 @@ export interface RefundPort {
    * En Fase 3 esto llama al provider real (MercadoPago refund API).
    * En MVP es un log stub — siempre exitoso.
    */
-  refund(input: RefundInput): Promise<RefundResult>
+  refund(input: RefundInput): Promise<RefundResult>;
 }

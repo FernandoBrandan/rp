@@ -2,7 +2,7 @@
 
 export interface PublishOptions {
   /** Se propaga como `correlationId` de AMQP. Útil para trazar cross-service. */
-  correlationId?: string
+  correlationId?: string;
 }
 
 export interface EventPublisherPort {
@@ -13,5 +13,5 @@ export interface EventPublisherPort {
    * topic: string estable y versionable. Ej: 'order.created' o 'order.created.v1'
    * payload: DTO plano, serializable, autocontenido.
    */
-  publish<T extends object>(topic: string, payload: T, options?: PublishOptions): Promise<void>
+  publish<T extends object>(topic: string, payload: T, options?: PublishOptions): Promise<void>;
 }

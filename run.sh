@@ -20,7 +20,7 @@ usage() {
 ${B}Uso:${N} ./run.sh <comando>
 
 ${B}Entornos:${N}
-  dev        Levanta Postgres + Redis (para 'npm run start:dev')
+  dev        Levanta Postgres + Redis (para 'pnpm start:dev')
   prod       Build + levanta todo containerizado
   down       Baja ambos stacks
   nuke       Baja todo y borra volúmenes (⚠️)
@@ -37,7 +37,7 @@ ${B}Migraciones${N} (siempre NODE_ENV=dev):
   revert       Revierte la última
   show         Lista aplicadas/pendientes
   seed         Carga datos de demo (1 admin + 3 productos) — idempotente
-  
+
 ${B}Otros:${N}
   help         Este mensaje
 EOF
@@ -50,7 +50,7 @@ case "$cmd" in
   dev)
     $COMPOSE_PROD down --remove-orphans >/dev/null 2>&1 || true
     $COMPOSE_DEV up -d
-    echo "${G}✔${N} Dev arriba. ${D}→ npm run start:dev${N}"
+    echo "${G}✔${N} Dev arriba. ${D}→ pnpm start:dev${N}"
     ;;
 
   prod)
@@ -132,11 +132,11 @@ case "$cmd" in
     esac
     ;;
 
-  migrate) NODE_ENV=dev npm run migration:run:dev ;;
-  revert)  NODE_ENV=dev npm run migration:revert ;;
-  show)    NODE_ENV=dev npm run migration:show ;;
+  migrate) NODE_ENV=dev pnpm migration:run:dev ;;
+  revert)  NODE_ENV=dev pnpm migration:revert ;;
+  show)    NODE_ENV=dev pnpm migration:show ;;
 
-  seed)    NODE_ENV=dev npm run seed:dev ;;
+  seed)    NODE_ENV=dev pnpm seed:dev ;;
 
   smoke)
     bash .scripts/smoke-test.sh

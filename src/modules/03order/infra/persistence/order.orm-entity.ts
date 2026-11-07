@@ -1,41 +1,41 @@
-import { Entity, Column, PrimaryColumn, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm'
+import { Entity, Column, PrimaryColumn, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
 
 @Entity('orders')
 @Index('idx_orders_status_updatedAt', ['status', 'updatedAt'])
 export class OrderEntity {
   @PrimaryColumn({ type: 'varchar' })
-  id: string
+  id: string;
 
   @Column()
-  userId: string
+  userId: string;
 
   @Column({ type: 'varchar', unique: true })
-  idempotencyKey: string
+  idempotencyKey: string;
 
   @Column('json')
-  items: { productId: string; quantity: number; price: number }[]
+  items: { productId: string; quantity: number; price: number }[];
 
   @Column('float')
-  total: number
+  total: number;
 
   @Column({ type: 'varchar', length: 3 })
-  currency: string
+  currency: string;
 
   @Column()
-  status: string
+  status: string;
 
   @Column()
-  reservationId: string
+  reservationId: string;
 
   @Column({ default: 'PENDING' })
-  paymentStatus: string
+  paymentStatus: string;
 
   @Column({ nullable: true })
-  paymentUrl: string
+  paymentUrl: string;
 
   @CreateDateColumn()
-  createdAt: Date
+  createdAt: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date
+  updatedAt: Date;
 }

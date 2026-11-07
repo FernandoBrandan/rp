@@ -1,30 +1,30 @@
 // src/modules/01catalog/infra/persistence/product.orm-entity.ts
 
-import { Entity, Column, PrimaryColumn, UpdateDateColumn, CreateDateColumn } from 'typeorm'
+import { Entity, Column, PrimaryColumn, UpdateDateColumn, CreateDateColumn } from 'typeorm';
 
 @Entity('products')
 export class ProductEntity {
   @PrimaryColumn()
-  id: string
+  id: string;
 
   @Column({ unique: true })
-  serial: string
+  serial: string;
 
   @Column()
-  name: string
+  name: string;
 
   @Column({ type: 'decimal', precision: 12, scale: 2 })
-  price: string
+  price: string;
 
   @Column({ default: 0 })
-  stock: number
+  stock: number;
 
   @Column()
-  status: string
+  status: string;
 
   @CreateDateColumn()
-  createdAt: Date
+  createdAt: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date
+  updatedAt: Date;
 }

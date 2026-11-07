@@ -29,6 +29,6 @@ export const Topics = {
   PAYMENT_REJECTED: 'payment.rejected',
   /** PAY → ECO: pago devuelto. */
   PAYMENT_REFUNDED: 'payment.refunded',
-} as const
+} as const;
 
-export type Topic = (typeof Topics)[keyof typeof Topics]
+export type Topic = (typeof Topics)[keyof typeof Topics];

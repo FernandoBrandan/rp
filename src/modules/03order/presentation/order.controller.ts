@@ -1,14 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  HttpCode,
-  Inject,
-  NotFoundException,
-  Param,
-  Post,
-  UseGuards,
-} from '@nestjs/common'
+import { Body, Controller, Get, HttpCode, Inject, NotFoundException, Param, Post, UseGuards } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -18,17 +8,17 @@ import {
   ApiBadRequestResponse,
   ApiNotFoundResponse,
   ApiConflictResponse,
-} from '@nestjs/swagger'
+} from '@nestjs/swagger';
 
-import { CreateOrderUseCase } from '../application/use-cases/create-order.use-case'
-import { CreateOrderDTO } from '../application/dto/request/create-order.dto'
-import { OrderResponseDTO } from '../application/dto/response/order-response.dto'
-import { OrderRepository } from '../domain/repositories/order.repository'
-import { ORDER_REPOSITORY } from '@infra/tokens'
-import { OrderMapper } from '../application/mappers/order.mapper'
-import { AuthGuard } from '@infra/auth-infra/guards/jwt-auth.guard'
-import { CurrentUser } from '@infra/auth-infra/decorators/current-user.decorator'
-import { CancelOrderUseCase } from '../application/use-cases/cancel-order.use-case'
+import { CreateOrderUseCase } from '../application/use-cases/create-order.use-case';
+import { CreateOrderDTO } from '../application/dto/request/create-order.dto';
+import { OrderResponseDTO } from '../application/dto/response/order-response.dto';
+import { OrderRepository } from '../domain/repositories/order.repository';
+import { ORDER_REPOSITORY } from '@infra/tokens';
+import { OrderMapper } from '../application/mappers/order.mapper';
+import { AuthGuard } from '@infra/auth-infra/guards/jwt-auth.guard';
+import { CurrentUser } from '@infra/auth-infra/decorators/current-user.decorator';
+import { CancelOrderUseCase } from '../application/use-cases/cancel-order.use-case';
 
 @ApiTags('orders')
 @UseGuards(AuthGuard)
@@ -59,11 +49,8 @@ export class OrderController {
     description: 'Producto no encontrado, inactivo o stock insuficiente',
   })
   @ApiConflictResponse({ description: 'Idempotency key duplicada en carrera' })
-  async create(
-    @CurrentUser('sub') userId: string,
-    @Body() dto: CreateOrderDTO,
-  ): Promise<OrderResponseDTO> {
-    return this.createOrderUseCase.execute(userId, dto)
+  async create(@CurrentUser('sub') userId: string, @Body() dto: CreateOrderDTO): Promise<OrderResponseDTO> {
+    return this.createOrderUseCase.execute(userId, dto);
   }
 
   @Get()
@@ -74,8 +61,8 @@ export class OrderController {
     isArray: true,
   })
   async findMyOrders(@CurrentUser('sub') userId: string): Promise<OrderResponseDTO[]> {
-    const orders = await this.orderRepository.getOrdersByUser(userId)
-    return orders.map(OrderMapper.toResponse)
+    const orders = await this.orderRepository.getOrdersByUser(userId);
+    return orders.map(OrderMapper.toResponse);
   }
 
   @Get(':id')
@@ -85,20 +72,17 @@ export class OrderController {
     type: OrderResponseDTO,
   })
   @ApiNotFoundResponse({ description: 'Orden no encontrada' })
-  async findOne(
-    @CurrentUser('sub') userId: string,
-    @Param('id') id: string,
-  ): Promise<OrderResponseDTO> {
-    const order = await this.orderRepository.getOrderDetail(id)
+  async findOne(@CurrentUser('sub') userId: string, @Param('id') id: string): Promise<OrderResponseDTO> {
+    const order = await this.orderRepository.getOrderDetail(id);
     if (!order) {
-      throw new NotFoundException(`Order with id ${id} not found`)
+      throw new NotFoundException(`Order with id ${id} not found`);
     }
 
     if (order.userId !== userId) {
-      throw new NotFoundException(`Order with id ${id} not found`)
+      throw new NotFoundException(`Order with id ${id} not found`);
     }
 
-    return OrderMapper.toResponse(order)
+    return OrderMapper.toResponse(order);
   }
 
   @Post(':id/cancel')
@@ -113,10 +97,7 @@ export class OrderController {
   @ApiOkResponse({ description: 'Orden cancelada', type: OrderResponseDTO })
   @ApiNotFoundResponse({ description: 'Orden no encontrada o no pertenece al usuario' })
   @ApiConflictResponse({ description: 'La orden no puede cancelarse en su estado actual' })
-  async cancel(
-    @CurrentUser('sub') userId: string,
-    @Param('id') id: string,
-  ): Promise<OrderResponseDTO> {
-    return this.cancelOrderUseCase.execute(userId, id)
+  async cancel(@CurrentUser('sub') userId: string, @Param('id') id: string): Promise<OrderResponseDTO> {
+    return this.cancelOrderUseCase.execute(userId, id);
   }
 }

@@ -1,25 +1,21 @@
 // src/infra/event-bus/consumers/order-paid.consumer.ts
 
-import { Inject, Injectable, OnModuleInit } from '@nestjs/common'
+import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 
-import { Logger } from '@infra/logger/logger.interface'
-import { EVENT_CONSUMER, LOGGER, ORDER_REPOSITORY, STOCK_SERVICE } from '@infra/tokens'
-import { Topics } from '@common/events/event-names'
+import { Logger } from '@infra/logger/logger.interface';
+import { EVENT_CONSUMER, LOGGER, ORDER_REPOSITORY, STOCK_SERVICE } from '@infra/tokens';
+import { Topics } from '@common/events/event-names';
 
-import { EventConsumerPort } from '@infra/event-bus/ports/event-consumer.port'
-import { OrderRepository } from '@order/domain/repositories/order.repository'
-import { StockPort } from '@order/application/ports/stock.port'
-import { OrderStatus } from '@order/domain/enums/orderStatus.enum'
+import { EventConsumerPort } from '@infra/event-bus/ports/event-consumer.port';
+import { OrderRepository } from '@order/domain/repositories/order.repository';
+import { StockPort } from '@order/application/ports/stock.port';
+import { OrderStatus } from '@order/domain/enums/orderStatus.enum';
 
 interface OrderPaidPayload {
-  orderId: string
+  orderId: string;
 }
 
-const TERMINAL_STATUSES = new Set<OrderStatus>([
-  OrderStatus.FAILED,
-  OrderStatus.CANCELLED,
-  OrderStatus.COMPLETED,
-])
+const TERMINAL_STATUSES = new Set<OrderStatus>([OrderStatus.FAILED, OrderStatus.CANCELLED, OrderStatus.COMPLETED]);
 
 @Injectable()
 export class OrderPaidConsumer implements OnModuleInit {
@@ -47,20 +43,20 @@ export class OrderPaidConsumer implements OnModuleInit {
         maxRetries: 3,
       },
       (payload) => this.handle(payload),
-    )
+    );
   }
 
   private async handle(payload: OrderPaidPayload) {
-    const order = await this.orderRepository.getOrderDetail(payload.orderId)
+    const order = await this.orderRepository.getOrderDetail(payload.orderId);
     if (!order) {
       this.logger.warn('OrderPaid received for unknown order', {
         event: 'order_paid_orphan',
         orderId: payload.orderId,
-      })
-      return
+      });
+      return;
     }
 
-    if (order.status === OrderStatus.PAID) return
+    if (order.status === OrderStatus.PAID) return;
     // Ya terminó en un estado incompatible → este ORDER_PAID llegó tarde
     // (típico: timeout en el link, orden marcada FAILED, webhook tardío del provider)
     if (TERMINAL_STATUSES.has(order.status)) {
@@ -68,28 +64,28 @@ export class OrderPaidConsumer implements OnModuleInit {
         event: 'order_paid_late',
         orderId: order.id,
         currentStatus: order.status,
-      })
-      return
+      });
+      return;
     }
 
     if (order.reservationId) {
       try {
-        await this.stockService.confirmReservation(order.reservationId)
-        this.logger.info('Stock confirmed', { orderId: order.id })
+        await this.stockService.confirmReservation(order.reservationId);
+        this.logger.info('Stock confirmed', { orderId: order.id });
       } catch (err) {
         this.logger.error('Failed to confirm stock — aborting payment', {
           event: 'stock_confirm_failed',
           orderId: order.id,
           reservationId: order.reservationId,
           error: err instanceof Error ? err.message : String(err),
-        })
-        return // no marcamos PAID si el stock no se confirmó
+        });
+        return; // no marcamos PAID si el stock no se confirmó
       }
     }
 
-    order.pay()
-    await this.orderRepository.update(order)
+    order.pay();
+    await this.orderRepository.update(order);
 
-    this.logger.info('Order marked PAID', { orderId: order.id })
+    this.logger.info('Order marked PAID', { orderId: order.id });
   }
 }

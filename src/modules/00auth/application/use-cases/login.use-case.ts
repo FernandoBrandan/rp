@@ -1,15 +1,15 @@
-import { Inject, Injectable, UnauthorizedException } from '@nestjs/common'
-import { JwtService } from '@nestjs/jwt'
+import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 
-import { Logger } from '@infra/logger/logger.interface'
-import { HASH_SERVICE, JWT_SERVICE, LOGGER, USER_FINDER } from '@infra/tokens'
-import { UserRole } from '@common/user-role.enum'
+import { Logger } from '@infra/logger/logger.interface';
+import { HASH_SERVICE, JWT_SERVICE, LOGGER, USER_FINDER } from '@infra/tokens';
+import { UserRole } from '@common/user-role.enum';
 
-import { HashService } from '@infra/auth-infra/ports/hash.service'
-import { UserFinderPort } from '@user/application/ports/user-finder.port'
+import { HashService } from '@infra/auth-infra/ports/hash.service';
+import { UserFinderPort } from '@user/application/ports/user-finder.port';
 
-import { LoginRequestDTO } from '../dto/request/login.request.dto'
-import { AuthResponseDTO } from '../dto/response/auth.response.dto'
+import { LoginRequestDTO } from '../dto/request/login.request.dto';
+import { AuthResponseDTO } from '../dto/response/auth.response.dto';
 
 @Injectable()
 export class LoginUseCase {
@@ -28,29 +28,29 @@ export class LoginUseCase {
   ) {}
 
   async execute(dto: LoginRequestDTO): Promise<AuthResponseDTO> {
-    const email = dto.email.trim().toLowerCase()
-    this.logger.info('Login attempt', { email })
+    const email = dto.email.trim().toLowerCase();
+    this.logger.info('Login attempt', { email });
 
-    const user = await this.userFinder.findByEmail(email)
+    const user = await this.userFinder.findByEmail(email);
 
     if (!user) {
-      this.logger.warn('Login failed', { email, reason: 'user_not_found' })
-      throw new UnauthorizedException('Invalid credentials')
+      this.logger.warn('Login failed', { email, reason: 'user_not_found' });
+      throw new UnauthorizedException('Invalid credentials');
     }
 
-    const isValid = await this.hashService.compare(dto.password, user.passwordHash)
+    const isValid = await this.hashService.compare(dto.password, user.passwordHash);
 
     if (!isValid) {
-      this.logger.warn('Login failed', { email, reason: 'bad_password' })
-      throw new UnauthorizedException('Invalid credentials')
+      this.logger.warn('Login failed', { email, reason: 'bad_password' });
+      throw new UnauthorizedException('Invalid credentials');
     }
 
     const accessToken = this.jwtService.sign({
       sub: user.id,
       role: user.role,
-    })
+    });
 
-    this.logger.info('Login success', { userId: user.id })
+    this.logger.info('Login success', { userId: user.id });
 
     return {
       accessToken,
@@ -59,6 +59,6 @@ export class LoginUseCase {
         email: user.email,
         role: user.role as UserRole,
       },
-    }
+    };
   }
 }

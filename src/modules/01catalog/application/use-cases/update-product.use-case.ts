@@ -1,15 +1,15 @@
 // src/modules/01catalog/application/use-cases/update-product.use-case.ts
-import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common'
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 
-import { Logger } from '@infra/logger/logger.interface'
+import { Logger } from '@infra/logger/logger.interface';
 
-import { Money } from '@main/common/domain/value-objects/money.vo'
-import { ProductStatus } from '@catalog/domain/enums/productStatus.enum'
-import { ProductRepository } from '@catalog/domain/repositories/product.repository'
-import { LOGGER, PRODUCT_REPOSITORY } from '@infra/tokens'
-import { UpdateProductDTO } from '../dto/request/update-product.request.dto'
-import { ProductMapper } from '../mappers/product.mapper'
-import { Currency } from '@main/common/domain/value-objects/currency.vo'
+import { Money } from '@main/common/domain/value-objects/money.vo';
+import { ProductStatus } from '@catalog/domain/enums/productStatus.enum';
+import { ProductRepository } from '@catalog/domain/repositories/product.repository';
+import { LOGGER, PRODUCT_REPOSITORY } from '@infra/tokens';
+import { UpdateProductDTO } from '../dto/request/update-product.request.dto';
+import { ProductMapper } from '../mappers/product.mapper';
+import { Currency } from '@main/common/domain/value-objects/currency.vo';
 
 @Injectable()
 export class UpdateProductUseCase {
@@ -22,45 +22,45 @@ export class UpdateProductUseCase {
   ) {}
 
   async execute(dto: UpdateProductDTO) {
-    this.logger.info('Updating product', { serial: dto.serial })
+    this.logger.info('Updating product', { serial: dto.serial });
 
-    const product = await this.productRepository.findBySerial(dto.serial)
+    const product = await this.productRepository.findBySerial(dto.serial);
     if (!product) {
-      this.logger.warn('Product not found', { serial: dto.serial })
-      throw new NotFoundException('Product not found')
+      this.logger.warn('Product not found', { serial: dto.serial });
+      throw new NotFoundException('Product not found');
     }
 
     try {
-      let hasChanges = false
+      let hasChanges = false;
       if (dto.name !== undefined) {
-        product.updateName(dto.name)
-        hasChanges = true
+        product.updateName(dto.name);
+        hasChanges = true;
       }
       if (dto.price !== undefined) {
-        product.updatePrice(Money.of(dto.price, Currency.USD))
-        hasChanges = true
+        product.updatePrice(Money.of(dto.price, Currency.USD));
+        hasChanges = true;
       }
       if (dto.stock !== undefined) {
-        product.updateStock(dto.stock)
-        hasChanges = true
+        product.updateStock(dto.stock);
+        hasChanges = true;
       }
       if (dto.status !== undefined) {
-        if (dto.status === ProductStatus.ACTIVE) product.activate()
-        else product.deactivate()
-        hasChanges = true
+        if (dto.status === ProductStatus.ACTIVE) product.activate();
+        else product.deactivate();
+        hasChanges = true;
       }
 
-      if (!hasChanges) return ProductMapper.toResponse(product)
+      if (!hasChanges) return ProductMapper.toResponse(product);
     } catch (error) {
-      throw new BadRequestException(error instanceof Error ? error.message : 'Invalid product data')
+      throw new BadRequestException(error instanceof Error ? error.message : 'Invalid product data');
     }
-    await this.productRepository.save(product)
+    await this.productRepository.save(product);
 
     this.logger.info('Product updated', {
       id: product.id,
       serial: product.serial.getValue(),
-    })
+    });
 
-    return ProductMapper.toResponse(product)
+    return ProductMapper.toResponse(product);
   }
 }

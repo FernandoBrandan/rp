@@ -1,6 +1,6 @@
 // src/modules/03order/application/mappers/order.mapper.ts
-import { Order } from '@main/modules/03order/domain/order.entity'
-import { OrderResponseDTO } from '../dto/response/order-response.dto'
+import { Order } from '@main/modules/03order/domain/order.entity';
+import { OrderResponseDTO } from '../dto/response/order-response.dto';
 
 export class OrderMapper {
   static toResponse(order: Order): OrderResponseDTO {
@@ -16,6 +16,6 @@ export class OrderMapper {
         price: item.price.toNumber(),
       })),
       paymentUrl: order.paymentUrl,
-    }
+    };
   }
 }

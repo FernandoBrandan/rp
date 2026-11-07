@@ -1,15 +1,15 @@
-import Decimal from 'decimal.js'
-import { Currency } from './currency.vo'
-import { CurrencyMismatchError } from '../errors/vo.errors'
+import Decimal from 'decimal.js';
+import { Currency } from './currency.vo';
+import { CurrencyMismatchError } from '../errors/vo.errors';
 
 export interface IMoney {
-  add(other: Money): Money
-  subtract(other: Money): Money
-  isZero(): boolean
-  isPositive(): boolean
-  isNegative(): boolean
-  equals(other: Money): boolean
-  toString(): string
+  add(other: Money): Money;
+  subtract(other: Money): Money;
+  isZero(): boolean;
+  isPositive(): boolean;
+  isNegative(): boolean;
+  equals(other: Money): boolean;
+  toString(): string;
 }
 
 export class Money implements IMoney {
@@ -19,58 +19,58 @@ export class Money implements IMoney {
   ) {}
 
   static of(amount: number | string | Decimal, currency: Currency): Money {
-    return new Money(new Decimal(amount), currency)
+    return new Money(new Decimal(amount), currency);
   }
 
   static zero(currency: Currency): Money {
-    return new Money(new Decimal(0), currency)
+    return new Money(new Decimal(0), currency);
   }
 
   add(other: Money): Money {
-    this.assertSameCurrency(other)
+    this.assertSameCurrency(other);
 
-    return new Money(this.amount.plus(other.amount), this.currency)
+    return new Money(this.amount.plus(other.amount), this.currency);
   }
 
   subtract(other: Money): Money {
-    this.assertSameCurrency(other)
+    this.assertSameCurrency(other);
 
-    return new Money(this.amount.minus(other.amount), this.currency)
+    return new Money(this.amount.minus(other.amount), this.currency);
   }
 
   isZero(): boolean {
-    return this.amount.isZero()
+    return this.amount.isZero();
   }
 
   isPositive(): boolean {
-    return this.amount.isPositive()
+    return this.amount.isPositive();
   }
 
   isNegative(): boolean {
-    return this.amount.isNegative()
+    return this.amount.isNegative();
   }
 
   equals(other: Money): boolean {
-    return this.currency.equals(other.currency) && this.amount.equals(other.amount)
+    return this.currency.equals(other.currency) && this.amount.equals(other.amount);
   }
 
   toDecimalString(): string {
-    return this.amount.toFixed(4)
+    return this.amount.toFixed(4);
   }
 
   toString(): string {
-    return `${this.amount.toString()} ${this.currency}`
+    return `${this.amount.toString()} ${this.currency}`;
   }
 
   multiply(factor: number | string | Decimal): Money {
-    return new Money(this.amount.times(factor), this.currency)
+    return new Money(this.amount.times(factor), this.currency);
   }
 
   private assertSameCurrency(other: Money): void {
-    if (!this.currency.equals(other.currency)) throw new CurrencyMismatchError()
+    if (!this.currency.equals(other.currency)) throw new CurrencyMismatchError();
   }
 
   toNumber(): number {
-    return this.amount.toNumber()
+    return this.amount.toNumber();
   }
 }

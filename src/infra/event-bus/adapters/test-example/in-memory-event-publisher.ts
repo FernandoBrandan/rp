@@ -1,8 +1,8 @@
 // src/infra/event-bus/in-memory-event-publisher.ts
-import { Inject, Injectable } from '@nestjs/common'
-import { Logger } from '@infra/logger/logger.interface'
-import { LOGGER } from '@infra/tokens'
-import { EventPublisherPort } from '@infra/event-bus/ports/event-publisher.port'
+import { Inject, Injectable } from '@nestjs/common';
+import { Logger } from '@infra/logger/logger.interface';
+import { LOGGER } from '@infra/tokens';
+import { EventPublisherPort } from '@infra/event-bus/ports/event-publisher.port';
 
 /**
  * Publicador in-memory. No persiste ni entrega a nadie.
@@ -23,6 +23,6 @@ export class InMemoryEventPublisher implements EventPublisherPort {
       event: 'event_published',
       topic,
       payload,
-    })
+    });
   }
 }
