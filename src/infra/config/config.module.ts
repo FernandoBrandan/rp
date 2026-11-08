@@ -2,8 +2,14 @@ import { Module } from '@nestjs/common';
 import { ConfigModule as NestConfigModule } from '@nestjs/config';
 import { envSchema } from './env.validation';
 
+const envFiles: Record<string, string> = {
+  dev: '.env.dev',
+  localprod: '.env.docker',
+  prod: '.env',
+};
+
 const env = process.env.NODE_ENV || 'dev';
-const envFile = env === 'dev' ? '.env.dev' : '.env.docker';
+const envFile = envFiles[env] || '.env';
 
 @Module({
   imports: [
@@ -18,4 +24,4 @@ const envFile = env === 'dev' ? '.env.dev' : '.env.docker';
     }),
   ],
 })
-export class ConfigModule {}
+export class ConfigModule { }

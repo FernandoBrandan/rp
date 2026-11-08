@@ -2,7 +2,7 @@ import * as Joi from 'joi';
 
 // Schema default + personalizado por proyecto
 export const envSchema = Joi.object({
-  NODE_ENV: Joi.string().valid('dev', 'prod', 'test').default('dev'),
+  NODE_ENV: Joi.string().valid('dev', 'localprod', 'prod', 'test').default('dev'),
   PORT: Joi.number().default(3000),
 
   DB_HOST: Joi.string().required(),

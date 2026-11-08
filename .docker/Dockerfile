@@ -1,36 +1,29 @@
 # ─── Etapa 1: build ────────────────────────────────
-FROM node:26-alpine AS builder
+FROM node:22-alpine AS builder
 WORKDIR /app
-RUN npm install -g npm@12
-COPY package*.json ./
-RUN npm ci
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN npm install -g pnpm@$(node -p "require('./package.json').packageManager.match(/^pnpm@([^+]+)/)[1]")
+RUN pnpm install --frozen-lockfile
 COPY . .
-RUN npm run build
+RUN pnpm build
 
 # ─── Etapa 2: prod deps only ───────────────────────
-FROM node:26-alpine AS deps
+FROM node:22-alpine AS deps
 WORKDIR /app
-RUN npm install -g npm@12
-COPY package*.json ./
-RUN npm ci --omit=dev && npm cache clean --force
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN npm install -g pnpm@$(node -p "require('./package.json').packageManager.match(/^pnpm@([^+]+)/)[1]")
+RUN pnpm install --prod --frozen-lockfile
 
 # ─── Etapa 3: runtime ─────────────────────────────
-FROM node:26-alpine AS runtime
+FROM node:22-alpine AS runtime
 WORKDIR /app
-RUN npm install -g npm@12
-
-ENV NODE_ENV=prod
-
+ENV NODE_ENV=production
 RUN addgroup -S app && adduser -S app -G app
-
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
-COPY package*.json ./
-
+COPY --from=builder /app/package.json ./package.json
 USER app
 EXPOSE 3000
-
 HEALTHCHECK --interval=30s --timeout=3s --start-period=20s --retries=3 \
   CMD wget -qO- http://localhost:3000/health/live || exit 1
-
 CMD ["node", "dist/main.js"]

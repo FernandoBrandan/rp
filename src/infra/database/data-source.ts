@@ -2,9 +2,16 @@ import 'reflect-metadata';
 import { DataSource } from 'typeorm';
 import * as dotenv from 'dotenv';
 
+const envFiles: Record<string, string | undefined> = {
+  dev: '.env.dev',
+  localprod: '.env.docker',
+  prod: undefined,
+  test: undefined,
+};
+
 const env = process.env.NODE_ENV || 'dev';
-const envFile = env === 'dev' ? '.env.dev' : '.env.docker';
-dotenv.config({ path: envFile });
+const envFile = envFiles[env];
+if (envFile) dotenv.config({ path: envFile });
 
 export default new DataSource({
   type: 'postgres',

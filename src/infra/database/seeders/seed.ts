@@ -80,7 +80,8 @@ async function seedAdmin(repo: UserRepository, hashService: HashService) {
 }
 
 async function main() {
-  if (process.env.NODE_ENV === 'prod' && process.env.ALLOW_PROD_SEED !== 'true') {
+  const protectedEnvs = new Set(['prod', 'localprod']);
+  if (protectedEnvs.has(process.env.NODE_ENV) && process.env.ALLOW_PROD_SEED !== 'true') {
     console.error(
       '❌ Seed bloqueado en prod.\n' + '   Si es un admin inicial y sabés lo que hacés: ALLOW_PROD_SEED=true',
     );

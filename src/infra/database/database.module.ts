@@ -11,7 +11,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
       useFactory: (config: ConfigService) => {
         const nodeEnv = config.get<string>('NODE_ENV');
-        const isProduction = nodeEnv === 'prod';
+        const isProdLike = nodeEnv === 'prod' || nodeEnv === 'localprod';
         const isTest = nodeEnv === 'test';
 
         return {
@@ -24,10 +24,10 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
           autoLoadEntities: true,
 
-          synchronize: !isProduction,
+          synchronize: !isProdLike,
 
-          migrations: isProduction ? ['dist/infra/database/migrations/*.js'] : [],
-          migrationsRun: isProduction,
+          migrations: isProdLike ? ['dist/infra/database/migrations/*.js'] : [],
+          migrationsRun: isProdLike,
           migrationsTableName: 'migrations',
 
           logging: config.get<string>('DB_LOGGING') === 'true',

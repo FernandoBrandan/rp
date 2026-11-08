@@ -6,7 +6,6 @@ on:
   pull_request:
     branches: [main]
 
-# Cancela runs viejos del mismo PR/branch
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -20,31 +19,35 @@ env:
 
 jobs:
   quality:
-    name: Lint · Typecheck · Unit
+    name: Lint · Format · Typecheck · Unit
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
           node-version-file: ".nvmrc"
-          cache: "npm"
+          cache: "pnpm"
 
       - name: Install deps
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Lint
-        continue-on-error: true
-        run: npm run lint
+        run: pnpm lint
+
+      - name: Format check
+        run: pnpm exec prettier --check "src/**/*.ts" "test/**/*.ts"
 
       - name: Typecheck
-        continue-on-error: true
-        run: npx tsc --noEmit
+        run: pnpm exec tsc --noEmit
 
       - name: Unit tests + coverage
-        continue-on-error: true
-        run: npm run test:unit -- --coverage
+        run: pnpm test:unit --coverage
 
       - name: Upload coverage
         if: always()
@@ -62,23 +65,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
           node-version-file: ".nvmrc"
-          cache: "npm"
+          cache: "pnpm"
 
       - name: Install deps
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Cache testcontainers
         uses: actions/cache@v4
         with:
           path: ~/.cache/testcontainers
-          key: tc-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          key: tc-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Integration tests
-        continue-on-error: true
-        run: npm run test:integration
+        run: pnpm test:integration
 
   e2e:
     name: E2E
@@ -88,32 +94,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
           node-version-file: ".nvmrc"
-          cache: "npm"
+          cache: "pnpm"
 
       - name: Install deps
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Cache testcontainers
         uses: actions/cache@v4
         with:
           path: ~/.cache/testcontainers
-          key: tc-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          key: tc-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: E2E tests
-        continue-on-error: true
-        run: npm run test:e2e
-
-      - name: Upload e2e logs
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: e2e-logs
-          path: |
-            /tmp/_resp
-            logs/
+        run: pnpm test:e2e
 
   build:
     name: Build
@@ -123,17 +123,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
           node-version-file: ".nvmrc"
-          cache: "npm"
+          cache: "pnpm"
 
       - name: Install deps
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Build
-        continue-on-error: true
-        run: npm run build
+        run: pnpm build
 
       - name: Upload dist
         uses: actions/upload-artifact@v4
@@ -141,3 +144,25 @@ jobs:
           name: dist
           path: dist/
           retention-days: 3
+
+  audit:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: "pnpm"
+
+      - name: Install deps
+        run: pnpm install --frozen-lockfile
+
+      - name: Audit prod dependencies
+        run: pnpm audit --prod --audit-level=high

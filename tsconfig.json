@@ -25,8 +25,7 @@
       "@user/*": ["./src/modules/00user/*"],
       "@catalog/*": ["./src/modules/01catalog/*"],
       "@cart/*": ["./src/modules/02cart/*"],
-      "@order/*": ["./src/modules/03order/*"],
-      "@payment/*": ["./src/modules/04payments/*"],
+      "@order/*": ["./src/modules/03order/*"], 
       "@identity/*": ["./src/modules/identity/*"]
     }
   }

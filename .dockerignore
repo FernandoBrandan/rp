@@ -10,3 +10,9 @@ coverage
 .scripts
 *.md
 !README.md
+.scripts/
+all.sh
+run.sh
+_*.txt
+test/
+.docker/
